@@ -1,0 +1,56 @@
+{
+  "id": "/",
+  "name": "TripSwipe — Pack Smart. Travel Ready.",
+  "short_name": "TripSwipe",
+  "description": "AI-powered travel preparation, packing assistant, and digital travel wallet for Indian and global adventurers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "categories": ["travel", "utilities", "lifestyle"],
+  "shortcuts": [
+    {
+      "name": "Pack Deck",
+      "short_name": "Deck",
+      "description": "Open your active packing deck and swipe cards",
+      "url": "/?view=deck",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Travel Store",
+      "short_name": "Store",
+      "description": "Find and buy travel gear from Amazon and Decathlon",
+      "url": "/?tab=shop",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Travel Wallet",
+      "short_name": "Wallet",
+      "description": "Access offline tickets, passes and permits",
+      "url": "/?tab=wallet",
+      "icons": [{ "src": "/icons/icon-192x192.png", "sizes": "192x192" }]
+    }
+  ],
+  "icons": [
+    {
+      "src": "/icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-maskable-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
