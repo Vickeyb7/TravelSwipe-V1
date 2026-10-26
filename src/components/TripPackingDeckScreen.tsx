@@ -14,7 +14,6 @@ interface TripPackingDeckScreenProps {
   onRecordUpcoming?: (trip: Trip) => void;
   onOpenAIAdvisor?: (initialPrompt?: string) => void;
   onOpenAILuggageAudit?: () => void;
-  onAnimateHeroVideo?: (imageUrl: string, title: string) => void;
 }
 
 export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
@@ -28,7 +27,6 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
   onRecordUpcoming,
   onOpenAIAdvisor,
   onOpenAILuggageAudit,
-  onAnimateHeroVideo,
 }) => {
   const [showWeatherExplainer, setShowWeatherExplainer] = useState(true);
   const [liveForecastData, setLiveForecastData] = useState<DestinationForecastData | null>(null);
@@ -41,7 +39,7 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
   const pct = total > 0 ? Math.round((readyCount / total) * 100) : 65;
 
   return (
-    <div className="flex flex-col gap-4 pb-28 pt-20 px-4 max-w-md mx-auto animate-in fade-in duration-200">
+    <div className="flex flex-col gap-6 pb-28 pt-20 px-4 sm:px-6 lg:px-8 max-w-6xl xl:max-w-7xl mx-auto animate-in fade-in duration-200">
       {/* Curated Preview Banner if user is just playing around */}
       {trip.isCuratedPreview && (
         <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 rounded-2xl p-3.5 flex flex-col gap-2 shadow-xs">
@@ -122,8 +120,12 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
         </div>
       </div>
 
-      {/* Hero Card: Manali Mountain Landscape */}
-      <div className="relative w-full rounded-2xl overflow-hidden shadow-sm bg-slate-900">
+      {/* 2-Column Desktop Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Left Column: Destination Hero & Weather Forecast */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          {/* Hero Card: Destination Landscape */}
+          <div className="relative w-full rounded-3xl overflow-hidden shadow-sm bg-slate-900">
         <div
           className="w-full h-52 bg-cover bg-center relative"
           style={{ backgroundImage: `url('${trip.heroImage}')` }}
@@ -151,22 +153,10 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
             </span>
 
             <div className="flex items-center gap-1.5">
-              {onAnimateHeroVideo && (
-                <button
-                  type="button"
-                  onClick={() => onAnimateHeroVideo(trip.heroImage, trip.destination)}
-                  title="Animate destination photo into Veo video"
-                  className="px-2.5 py-1 rounded-full bg-white/20 backdrop-blur-md text-white hover:bg-white/30 text-xs font-bold shadow-md flex items-center gap-1 active:scale-95 transition-all border border-white/20 cursor-pointer"
-                >
-                  <span className="material-symbols-outlined text-[15px]">movie</span>
-                  <span>Animate</span>
-                </button>
-              )}
-
               <button
                 onClick={onOpenSwipeMode}
                 title="Interactive Swipe Mode"
-                className="px-2.5 py-1 rounded-full bg-blue-600 text-white text-xs font-bold shadow-md flex items-center gap-1 active:scale-95 transition-all"
+                className="px-3 py-1.5 rounded-full bg-blue-600 text-white text-xs font-bold shadow-md flex items-center gap-1.5 active:scale-95 transition-all hover:bg-blue-700 cursor-pointer"
               >
                 <span className="material-symbols-outlined text-[16px]">touch_app</span>
                 <span>Swipe Mode</span>
@@ -210,7 +200,10 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
         onOpenAIAdvisor={onOpenAIAdvisor}
         onWeatherLoaded={setLiveForecastData}
       />
+    </div>
 
+    {/* Right Column: Packing Progress & Hub Cards */}
+    <div className="lg:col-span-5 flex flex-col gap-6">
       {/* Packing Completion Summary Card */}
       <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-100 flex flex-col gap-3.5">
         <div className="flex items-center justify-between">
@@ -392,5 +385,7 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
         </button>
       </div>
     </div>
+  </div>
+</div>
   );
 };

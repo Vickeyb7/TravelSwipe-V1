@@ -1,6 +1,12 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTrips } from '../context/TripsContext';
 import { PackingItem, GearCategory } from '../types';
+import {
+  DESTINATION_THEMES,
+  PRESET_SMART_SHOP,
+  detectPresetForTrip,
+  DestinationTheme,
+} from '../utils/shopPresets';
 
 export interface ShopProduct {
   id: string;
@@ -24,6 +30,7 @@ export interface SmartShopRecommendation {
   id: string;
   title: string;
   category: string;
+  imageUrl?: string;
   weatherMatchReason: string;
   activityMatchReason: string;
   priceINR: number;
@@ -90,8 +97,109 @@ const IMAGES = {
     'https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=600&q=80',
 };
 
+// Smart image resolver that pairs products with relevant, realistic imagery
+export function resolveGearImage(item: {
+  id?: string;
+  title: string;
+  category?: string;
+  imageUrl?: string;
+}): string {
+  if (item.imageUrl) return item.imageUrl;
+
+  const t = (item.title || '').toLowerCase();
+  const id = (item.id || '').toLowerCase();
+  const combined = `${id} ${t}`;
+
+  if (combined.includes('powerbank') || combined.includes('power bank') || combined.includes('battery')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuAANvFdMoHy74JhWyWroeDwnp2YozqvBksLiwAwgPjKeN7wDpzdXm3fyzZvtBGd_uhZs_vjK5rln4szTvV_7p1AwmlngFOMjreR2500AjxTnXwcG1MmpQkTBp3xXC-6j8vqlk0hiMcqDdqzeSqQ9OP735oXdu5HWcgOhQTyXDMpl5m97zTpxknDWud97nRqcwxHH19gJGewZkw6-AKN-ydz3MwDnCJv7J0JzExmWOtYTGvehCBfUHHkKA';
+  }
+  if (combined.includes('cube') || combined.includes('compression') || combined.includes('organizer')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuDcfszlFr0RIWqHwFOl4Slea-FLW534_Wx1OBHOHLyeDPPn0T5P7msW49C2mqvOEI2WVjqSjbuAhZPhuWwegkmbOZcgnotPc5AP3M3lv9DXwijW6wYp1VN2yCZ4kU5ceZQsAzggHKbKSjclj1xMOnlXPLtE9porGFCpVuzPRreImBa0A2vL5cuolHAGdqlbbdxFPdCL86qUqXsqkSbfjwAEQApR6AP_-QUXaj4I169MwFKrdAmxFbfqvg';
+  }
+  if (combined.includes('adapter') || combined.includes('charger') || combined.includes('plug')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuAaWWrjJWk1w5cpJIWOHKTRBxK3cVTAKFs7euiUS4nDes0H4QQppeFTHWwxdyg9kV7MJJevkLJDQ6oXnsHCP4lgy6EHDq9nY-4J1Z42Fz1oUC1HQv85IC_xqRcxs4zIE-jSnCCrDoDWL2WRksoIOBSIBTH1f_Vgo3XE-SJ2eggF8A5LwzxhzdQKEVKteGVDkU5XQEvStXRiEDYU7lcGaN64wxsv15Cg5MZTKe-TBoPS1_ns7SCA7uLY8A';
+  }
+  if (combined.includes('daypack') || combined.includes('backpack') || combined.includes('rucksack') || combined.includes('50l') || combined.includes('travel 500')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuBe5Jj_X5S7cMsa8tx2wx5iIPT6B0OEgeL3pGoXh9jMSX2qoabM__4hJpSaFPM-8oMlGmB2XKIjEtutjMEkUASwIzESBkrflabJ88dIg4OESNupCQe9lsQAA5yFik82f9nrq2mFpoXURMLGpHxSsdAnpx3eBLtd5thEWtQToOdDCSwThEU38jj2hvXEULZc-ak7MRWnT2Ve-zJq8q8yJVHfDSuAxvfGGEevym3VIfM0CWb0M7qpt7K_Fw';
+  }
+  if (combined.includes('sunscreen') || combined.includes('spf') || combined.includes('lotion')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuCz5a3hvzrHyxWHpJaIJacSH-CoPyxAtfXcaHbFzfALLEUIwz71lNFCyRA3mAORi9nMryqwHt1fN0tuAKO8kvAH0IXSxIEd7Gq7AYbJqyt-zmn-Iv7NzOYFVfSKj-EsFESHPblGk6b7sRZE2YRxVQnr1TC7uOrx4NeMVlxZtaR5t-S-V7mszgbhRzyOJu_nLNuyucWC6cCcol2-asZlz-6RICO2nDmWBEa-Efct4ycoLVNiXw-wlAYh1w';
+  }
+  if (combined.includes('linen') || combined.includes('shirt') || combined.includes('button-down') || combined.includes('cotton')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuD5fPefNvxwy5tOUHhuNFxWFP-4uSWHB9CMCzXbN19_QA_XRnHt701md0JmGUQ24FVVwN5Uzx6B12aUKrRAcyYrNCGBf8LGuYwGs-j0HlpSqQDXFSK2ccgrmwVrexP7DgDieU1xf7w0exIzPBc6XthdRp7x0OgWoOn7gtmP7hmzxUHg5gYmL0X_6wTfaKKonAJgiJaAjwmV5hMM6YahDix7Nf-IQZpv3Fm_L-jJoSC6hg_djlHSy2QkmA';
+  }
+  if (combined.includes('swim') || combined.includes('trunk') || combined.includes('short')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg';
+  }
+  if (combined.includes('sweater') || combined.includes('merino') || combined.includes('knit') || combined.includes('wool')) {
+    return 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('down') || combined.includes('puffer') || combined.includes('jacket') || combined.includes('forclaz mt500')) {
+    return 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('glove') || combined.includes('mittens')) {
+    return 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('boot') || combined.includes('snow hiking boots')) {
+    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuBe5Jj_X5S7cMsa8tx2wx5iIPT6B0OEgeL3pGoXh9jMSX2qoabM__4hJpSaFPM-8oMlGmB2XKIjEtutjMEkUASwIzESBkrflabJ88dIg4OESNupCQe9lsQAA5yFik82f9nrq2mFpoXURMLGpHxSsdAnpx3eBLtd5thEWtQToOdDCSwThEU38jj2hvXEULZc-ak7MRWnT2Ve-zJq8q8yJVHfDSuAxvfGGEevym3VIfM0CWb0M7qpt7K_Fw';
+  }
+  if (combined.includes('shoe') || combined.includes('sneaker') || combined.includes('gowalk') || combined.includes('mh500')) {
+    return 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('towel') || combined.includes('microfiber')) {
+    return 'https://images.unsplash.com/photo-1616627547584-bf28cee262db?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('lock') || combined.includes('tsa')) {
+    return 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('glass') || combined.includes('sunglass') || combined.includes('goggle')) {
+    return 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('pouch') || combined.includes('dry bag') || combined.includes('waterproof dry bag')) {
+    return 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('sandal') || combined.includes('water shoes') || combined.includes('aqua')) {
+    return 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('thermal') || combined.includes('innerwear') || combined.includes('heat-lock') || combined.includes('van heusen')) {
+    return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('crossbody') || combined.includes('sling') || combined.includes('rfid')) {
+    return 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('umbrella')) {
+    return 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('steamer') || combined.includes('iron')) {
+    return 'https://images.unsplash.com/photo-1585336261026-6d633f81e359?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('scale') || combined.includes('luggage scale')) {
+    return 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('pole') || combined.includes('trekking pole')) {
+    return 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('headlamp') || combined.includes('torch')) {
+    return 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('bladder') || combined.includes('hydration') || combined.includes('bottle') || combined.includes('flask')) {
+    return 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('cargo') || combined.includes('pant') || combined.includes('trouser')) {
+    return 'https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('poncho') || combined.includes('raincoat') || combined.includes('rain jacket')) {
+    return 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=600&q=80';
+  }
+  if (combined.includes('cover') || combined.includes('silica') || combined.includes('earbuds') || combined.includes('bivy')) {
+    return 'https://images.unsplash.com/photo-1509744645300-a2098b11871a?auto=format&fit=crop&w=600&q=80';
+  }
+
+  return 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=600&q=80';
+}
+
 export const ShopScreen: React.FC<ShopScreenProps> = () => {
-  const { activeTrip, updateItemStatus, addCustomItem } = useTrips();
+  const { trips, activeTrip, setActiveTripId, updateItemStatus, addCustomItem } = useTrips();
 
   // Primary view tabs: 'smart_shop' (Gemini AI trip gear match) vs 'browse' (catalog & search)
   const [activeTab, setActiveTab] = useState<'smart_shop' | 'browse'>('smart_shop');
@@ -108,36 +216,100 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
   const [aiCustomProducts, setAiCustomProducts] = useState<ShopProduct[]>([]);
   const [aiSummary, setAiSummary] = useState<string | null>(null);
 
+  // Smart Shop Theme & Destination Selection
+  const [selectedThemeId, setSelectedThemeId] = useState<string>(() => detectPresetForTrip(activeTrip));
+  const [customDestinationQuery, setCustomDestinationQuery] = useState<string>('');
+  const [activeCustomDestination, setActiveCustomDestination] = useState<string | null>(null);
+
   // Smart Shop (Gemini AI Trip Profile Analysis) State
   const [isAnalyzingSmartShop, setIsAnalyzingSmartShop] = useState<boolean>(false);
-  const [smartShopData, setSmartShopData] = useState<SmartShopData | null>(null);
   const [smartShopError, setSmartShopError] = useState<string | null>(null);
+  const [aiShopCache, setAiShopCache] = useState<Record<string, SmartShopData>>({});
 
-  // Auto-fetch Smart Shop on mount or when activeTrip changes
-  const handleFetchSmartShop = async (forceRefresh: boolean = false) => {
-    if (smartShopData && !forceRefresh) return;
+  // Sync theme when activeTrip changes
+  useEffect(() => {
+    if (activeTrip) {
+      const detected = detectPresetForTrip(activeTrip);
+      setSelectedThemeId(detected);
+      setActiveCustomDestination(null);
+    }
+  }, [activeTrip?.id]);
+
+  // Active theme object
+  const currentTheme = useMemo<DestinationTheme>(() => {
+    const found = DESTINATION_THEMES.find((t) => t.id === selectedThemeId);
+    return found || DESTINATION_THEMES[0];
+  }, [selectedThemeId]);
+
+  // Current effective destination details
+  const effectiveDestination = activeCustomDestination
+    ? activeCustomDestination
+    : activeTrip?.destination
+    ? activeTrip.destination
+    : currentTheme.destinationName;
+
+  const effectiveTempRange = activeTrip?.tempRange || currentTheme.tempRange;
+  const effectiveClimateTitle = activeTrip?.climateTitle || currentTheme.climateTitle;
+  const effectiveActivities = activeTrip?.activities || currentTheme.activities;
+
+  // Active Smart Shop Data: Instant 0ms load!
+  const smartShopData = useMemo<SmartShopData>(() => {
+    const cacheKey = activeCustomDestination
+      ? `custom-${activeCustomDestination.toLowerCase()}`
+      : activeTrip
+      ? `trip-${activeTrip.id}`
+      : selectedThemeId;
+
+    if (aiShopCache[cacheKey]) {
+      return aiShopCache[cacheKey];
+    }
+
+    const basePreset = PRESET_SMART_SHOP[selectedThemeId] || PRESET_SMART_SHOP.universal;
+
+    if (activeCustomDestination) {
+      return {
+        ...basePreset,
+        analysisSummary: `Instant curated travel gear tailored for ${activeCustomDestination}. Tap 'Re-Analyze with AI' anytime for custom itinerary synthesis.`,
+        climateBadge: `${activeCustomDestination} Gear Curation`,
+      };
+    }
+
+    if (activeTrip && activeTrip.destination !== basePreset.climateBadge) {
+      return {
+        ...basePreset,
+        analysisSummary: `Curated gear optimized for ${activeTrip.destination} (${activeTrip.tempRange || currentTheme.tempRange}) and ${activeTrip.activities?.slice(0, 2).join(' & ') || 'vacation activities'}.`,
+        climateBadge: `${activeTrip.destination} • ${activeTrip.climateTitle || currentTheme.climateTitle}`,
+      };
+    }
+
+    return basePreset;
+  }, [activeCustomDestination, activeTrip, selectedThemeId, aiShopCache, currentTheme]);
+
+  // On-demand fetch for Gemini AI Smart Shop
+  const handleFetchSmartShop = async (targetThemeId?: string, overrideDest?: string) => {
+    const themeToUse = targetThemeId || selectedThemeId;
+    const matchedTheme = DESTINATION_THEMES.find((t) => t.id === themeToUse) || currentTheme;
+    const dest = overrideDest || effectiveDestination;
+    const cacheKey = overrideDest
+      ? `custom-${overrideDest.toLowerCase()}`
+      : activeTrip
+      ? `trip-${activeTrip.id}`
+      : themeToUse;
 
     try {
       setIsAnalyzingSmartShop(true);
       setSmartShopError(null);
 
-      const dest = activeTrip?.destination || 'Manali, Himachal Pradesh';
-      const datesText = activeTrip?.datesText || 'Upcoming 5-Day Alpine Trip';
+      const datesText = activeTrip?.datesText || 'Upcoming 5-Day Journey';
       const durationDays = activeTrip?.durationDays || 5;
-      const tempRange = activeTrip?.tempRange || '-2°C to 7°C';
-      const climateTitle = activeTrip?.climateTitle || 'Sub-Zero Alpine';
-      const climateNote =
-        activeTrip?.climateNote ||
-        'Sub-zero nighttime chills require thermal insulation and sturdy footwear.';
-      const activities = activeTrip?.activities || [
-        'Snow Hikes',
-        'Cafes & Markets',
-        'Bonfire Evenings',
-      ];
-      const purposes = activeTrip?.purposes || ['Vacation', 'Adventure'];
-      const style = activeTrip?.style || 'Casual & Warm';
+      const tempRange = activeTrip?.tempRange || matchedTheme.tempRange;
+      const climateTitle = activeTrip?.climateTitle || matchedTheme.climateTitle;
+      const climateNote = activeTrip?.climateNote || matchedTheme.climateNote;
+      const activities = activeTrip?.activities || matchedTheme.activities;
+      const purposes = activeTrip?.purposes || ['Vacation', 'Exploration'];
+      const style = activeTrip?.style || 'Casual & Practical';
       const budgetTier = activeTrip?.budgetTier || 'Mid-range';
-      const luggageType = activeTrip?.luggageType || 'Backpack (50–65L)';
+      const luggageType = activeTrip?.luggageType || 'Backpack or Trolley';
 
       const unpackedOrToBuyItems = (activeTrip?.items || [])
         .filter((it) => it.status === 'to_buy' || it.status === 'own')
@@ -164,27 +336,86 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
 
       const data = await res.json();
       if (data && data.recommendations && data.recommendations.length > 0) {
-        setSmartShopData({
+        const compiled: SmartShopData = {
           analysisSummary: data.analysisSummary,
-          climateBadge: data.climateBadge || 'Trip Climate Analysis',
+          climateBadge: data.climateBadge || `${dest} Climate Analysis`,
           activityHighlight: data.activityHighlight || 'Trip Activities Focus',
           estimatedShopBudgetINR: data.estimatedShopBudgetINR || 4500,
           recommendations: data.recommendations,
-        });
+        };
+        setAiShopCache((prev) => ({ ...prev, [cacheKey]: compiled }));
+        setToastMsg(`✓ Gemini AI personalized gear for ${dest}!`);
+        setTimeout(() => setToastMsg(null), 3000);
       } else {
         throw new Error('No recommendations returned');
       }
     } catch (err: any) {
       console.warn('Smart Shop fetch error:', err.message);
-      setSmartShopError('Could not load AI recommendations right now.');
+      setSmartShopError('Could not refresh AI recommendations right now; showing instant curated gear.');
     } finally {
       setIsAnalyzingSmartShop(false);
     }
   };
 
-  useEffect(() => {
-    handleFetchSmartShop(false);
-  }, [activeTrip?.id]);
+  const handleApplyCustomDestination = (destInput?: string) => {
+    const raw = (destInput || customDestinationQuery).trim();
+    if (!raw) return;
+    setActiveCustomDestination(raw);
+
+    const lower = raw.toLowerCase();
+    if (
+      lower.includes('snow') ||
+      lower.includes('winter') ||
+      lower.includes('manali') ||
+      lower.includes('kashmir') ||
+      lower.includes('gulmarg') ||
+      lower.includes('alps') ||
+      lower.includes('switzerland')
+    ) {
+      setSelectedThemeId('winter');
+    } else if (
+      lower.includes('beach') ||
+      lower.includes('goa') ||
+      lower.includes('bali') ||
+      lower.includes('phuket') ||
+      lower.includes('andaman') ||
+      lower.includes('maldives') ||
+      lower.includes('hawaii')
+    ) {
+      setSelectedThemeId('beach');
+    } else if (
+      lower.includes('trek') ||
+      lower.includes('ladakh') ||
+      lower.includes('spiti') ||
+      lower.includes('himalaya') ||
+      lower.includes('camp')
+    ) {
+      setSelectedThemeId('trekking');
+    } else if (
+      lower.includes('heritage') ||
+      lower.includes('jaipur') ||
+      lower.includes('udaipur') ||
+      lower.includes('europe') ||
+      lower.includes('paris') ||
+      lower.includes('rome') ||
+      lower.includes('kyoto') ||
+      lower.includes('london')
+    ) {
+      setSelectedThemeId('heritage');
+    } else if (
+      lower.includes('rain') ||
+      lower.includes('monsoon') ||
+      lower.includes('kerala') ||
+      lower.includes('meghalaya')
+    ) {
+      setSelectedThemeId('monsoon');
+    } else {
+      setSelectedThemeId('universal');
+    }
+
+    setToastMsg(`Showing gear tailored for "${raw}"!`);
+    setTimeout(() => setToastMsg(null), 2500);
+  };
 
   // AI-powered dynamic search across stores
   const handleRunAISearch = async (queryText?: string) => {
@@ -198,7 +429,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           query: q,
-          destination: activeTrip?.destination || 'Manali',
+          destination: effectiveDestination,
         }),
       });
 
@@ -806,7 +1037,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
   const activeRetailers = ['All Stores', 'Amazon India', 'Decathlon', 'Myntra', 'Flipkart'];
 
   return (
-    <div className="flex flex-col gap-4 pb-24">
+    <div className="flex flex-col gap-6 pb-28 pt-20 px-4 sm:px-6 lg:px-8 max-w-6xl xl:max-w-7xl mx-auto animate-in fade-in duration-200">
       {/* Toast Notification */}
       {toastMsg && (
         <div className="fixed top-18 left-4 right-4 z-50 p-3 rounded-2xl bg-slate-900 text-white text-xs font-bold shadow-xl border border-white/20 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
@@ -1060,6 +1291,167 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
       {/* ========================================================= */}
       {activeTab === 'smart_shop' && !searchQuery.trim() && (
         <div className="flex flex-col gap-4 animate-in fade-in">
+          {/* Destination & Style Selector Hub */}
+          <div className="bg-white rounded-3xl p-4 sm:p-5 shadow-xs border border-slate-200/90 flex flex-col gap-3.5">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <div className="flex items-center gap-2">
+                <span className="w-8 h-8 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center">
+                  <span className="material-symbols-outlined text-[19px]">explore</span>
+                </span>
+                <div>
+                  <h2 className="text-sm font-black text-slate-900 leading-tight">
+                    Select Destination or Travel Style
+                  </h2>
+                  <p className="text-[11px] text-slate-500 font-medium">
+                    {activeTrip
+                      ? `Linked to active trip "${activeTrip.destination}". Switch below or explore presets:`
+                      : 'Choose a climate preset or type any custom destination to shop:'}
+                  </p>
+                </div>
+              </div>
+
+              {/* My Planned Trips Switcher (if user has trips) */}
+              {trips && trips.length > 0 && (
+                <div className="flex items-center gap-1.5 self-start sm:self-auto overflow-x-auto max-w-full pb-1 sm:pb-0">
+                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400 shrink-0">
+                    My Trips:
+                  </span>
+                  {trips.map((t) => {
+                    const isCurrent = activeTrip?.id === t.id;
+                    return (
+                      <button
+                        key={t.id}
+                        type="button"
+                        onClick={() => {
+                          setActiveTripId(t.id);
+                          setActiveCustomDestination(null);
+                          const detected = detectPresetForTrip(t);
+                          setSelectedThemeId(detected);
+                          setToastMsg(`Switched gear matching to "${t.destination}"!`);
+                          setTimeout(() => setToastMsg(null), 2500);
+                        }}
+                        className={`px-2.5 py-1 rounded-xl text-xs font-bold shrink-0 transition-all cursor-pointer flex items-center gap-1 border ${
+                          isCurrent
+                            ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
+                            : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border-slate-200'
+                        }`}
+                      >
+                        <span className="material-symbols-outlined text-[13px]">flight_takeoff</span>
+                        <span>{t.destination}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+
+            {/* Travel Vibe & Climate Preset Chips */}
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+              {DESTINATION_THEMES.map((theme) => {
+                const isSelected = selectedThemeId === theme.id && !activeCustomDestination;
+                return (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedThemeId(theme.id);
+                      setActiveCustomDestination(null);
+                      setToastMsg(`Switched to "${theme.label}" gear preset!`);
+                      setTimeout(() => setToastMsg(null), 2500);
+                    }}
+                    className={`p-2.5 rounded-2xl flex flex-col items-start gap-1 text-left transition-all cursor-pointer border ${
+                      isSelected
+                        ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-500 shadow-xs ring-2 ring-blue-500/20'
+                        : 'bg-slate-50/80 hover:bg-white hover:border-slate-300 border-slate-200/80'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span
+                        className={`material-symbols-outlined text-[18px] ${
+                          isSelected ? 'text-blue-600' : 'text-slate-500'
+                        }`}
+                      >
+                        {theme.icon}
+                      </span>
+                      {isSelected && (
+                        <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse"></span>
+                      )}
+                    </div>
+                    <span
+                      className={`text-xs font-black leading-tight line-clamp-1 ${
+                        isSelected ? 'text-blue-900' : 'text-slate-800'
+                      }`}
+                    >
+                      {theme.label}
+                    </span>
+                    <span className="text-[10px] text-slate-500 font-medium line-clamp-1">
+                      {theme.tempRange}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Custom Destination Input */}
+            <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+              <div className="relative flex-1 flex items-center">
+                <span className="material-symbols-outlined absolute left-3 text-slate-400 text-[18px]">
+                  pin_drop
+                </span>
+                <input
+                  type="text"
+                  value={customDestinationQuery}
+                  onChange={(e) => setCustomDestinationQuery(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') {
+                      handleApplyCustomDestination();
+                    }
+                  }}
+                  placeholder="Or enter any custom destination (e.g. Dubai, Switzerland, Bali, Kerala, Tokyo)..."
+                  className="w-full pl-9 pr-20 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:outline-hidden focus:border-blue-500 focus:bg-white transition-all"
+                />
+                {customDestinationQuery && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCustomDestinationQuery('');
+                      setActiveCustomDestination(null);
+                    }}
+                    className="absolute right-12 w-5 h-5 rounded-full bg-slate-200 text-slate-600 text-[11px] flex items-center justify-center hover:bg-slate-300 cursor-pointer"
+                  >
+                    ✕
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => handleApplyCustomDestination()}
+                  disabled={!customDestinationQuery.trim()}
+                  className="absolute right-1.5 px-2.5 py-1 rounded-lg bg-blue-600 hover:bg-blue-700 disabled:opacity-40 text-white text-[11px] font-bold cursor-pointer transition-all"
+                >
+                  Apply
+                </button>
+              </div>
+
+              {activeCustomDestination && (
+                <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-200 text-xs text-blue-900 shrink-0">
+                  <span className="font-bold">Active:</span>
+                  <span className="font-extrabold text-blue-700">{activeCustomDestination}</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActiveCustomDestination(null);
+                      setCustomDestinationQuery('');
+                    }}
+                    className="ml-1 text-slate-400 hover:text-slate-700 font-black cursor-pointer"
+                    title="Reset custom destination"
+                  >
+                    ✕
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* Trip Profile Analysis Header Card */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-indigo-900 via-blue-800 to-teal-800 p-5 text-white shadow-md border border-white/10">
             <div className="flex items-start justify-between gap-3">
@@ -1068,24 +1460,24 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                   <span className="material-symbols-outlined text-[15px] animate-pulse">
                     auto_awesome
                   </span>
-                  <span>Smart Shop • Gemini AI Gear Analysis</span>
+                  <span>Instant Smart Shop • Climate & Gear Matching</span>
                 </div>
 
                 <h1 className="text-xl font-black text-white leading-tight">
-                  {activeTrip ? `Curated Gear for ${activeTrip.destination}` : 'Trip Gear Matching'}
+                  Curated Gear for {effectiveDestination}
                 </h1>
 
                 <p className="text-xs text-blue-100 mt-1 opacity-90 leading-relaxed max-w-md">
-                  Gemini AI analyzes {activeTrip?.destination || 'your destination'}&apos;s real-time climate, temperature range, and activity itinerary to recommend purchase-ready items with direct e-commerce links.
+                  Tailored gear matching {effectiveDestination}&apos;s real-time climate ({effectiveTempRange}) and activities with direct purchase links to Amazon, Decathlon, Myntra, and Flipkart.
                 </p>
               </div>
 
               <button
                 type="button"
-                onClick={() => handleFetchSmartShop(true)}
+                onClick={() => handleFetchSmartShop(selectedThemeId, activeCustomDestination || undefined)}
                 disabled={isAnalyzingSmartShop}
-                className="shrink-0 px-3 py-2 rounded-2xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 border border-white/20 shadow-xs cursor-pointer transition-all"
-                title="Re-analyze trip with Gemini"
+                className="shrink-0 px-3.5 py-2 rounded-2xl bg-white/15 hover:bg-white/25 active:scale-95 text-white text-xs font-bold flex items-center gap-1.5 border border-white/20 shadow-xs cursor-pointer transition-all"
+                title="Re-analyze trip with Gemini AI"
               >
                 <span
                   className={`material-symbols-outlined text-[16px] ${
@@ -1094,7 +1486,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                 >
                   sync
                 </span>
-                <span>{isAnalyzingSmartShop ? 'Analyzing...' : 'Re-Analyze'}</span>
+                <span>{isAnalyzingSmartShop ? 'Analyzing...' : 'Re-Analyze with AI'}</span>
               </button>
             </div>
 
@@ -1106,10 +1498,10 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                   <span>Destination</span>
                 </span>
                 <span className="font-extrabold text-white truncate">
-                  {activeTrip?.destination || 'Manali, Himachal Pradesh'}
+                  {effectiveDestination}
                 </span>
-                <span className="text-[10px] text-teal-200 font-medium">
-                  {activeTrip?.datesText || '5-Day Journey'}
+                <span className="text-[10px] text-teal-200 font-medium truncate">
+                  {activeTrip ? 'Active Planned Trip' : currentTheme.label}
                 </span>
               </div>
 
@@ -1119,10 +1511,10 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                   <span>Expected Weather</span>
                 </span>
                 <span className="font-extrabold text-white truncate">
-                  {activeTrip?.tempRange || '-2°C to 7°C'}
+                  {effectiveTempRange}
                 </span>
                 <span className="text-[10px] text-amber-200 font-medium truncate">
-                  {smartShopData?.climateBadge || activeTrip?.climateTitle || 'Sub-Zero Alpine Freeze'}
+                  {effectiveClimateTitle}
                 </span>
               </div>
 
@@ -1132,10 +1524,10 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                   <span>Activities Focus</span>
                 </span>
                 <span className="font-extrabold text-white truncate">
-                  {activeTrip?.activities?.[0] || 'Snow Hikes & Trails'}
+                  {effectiveActivities[0] || 'Transit & Sightseeing'}
                 </span>
                 <span className="text-[10px] text-teal-100 font-medium truncate">
-                  {activeTrip?.activities?.slice(1).join(', ') || 'Cafes & Bonfire'}
+                  {effectiveActivities.slice(1).join(', ') || 'Local Exploration'}
                 </span>
               </div>
             </div>
@@ -1183,21 +1575,21 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
             </div>
           )}
 
-          {/* Loading Skeleton */}
-          {isAnalyzingSmartShop && !smartShopData && (
-            <div className="flex flex-col items-center justify-center p-8 bg-white rounded-3xl border border-slate-100 shadow-xs gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center animate-bounce shadow-xs">
-                <span className="material-symbols-outlined text-[28px] animate-spin">
-                  auto_awesome
-                </span>
-              </div>
-              <div className="text-center">
-                <h4 className="text-sm font-extrabold text-slate-900">
-                  Gemini AI Analyzing Trip Profile...
-                </h4>
-                <p className="text-xs text-slate-500 mt-1 max-w-xs">
-                  Scanning weather forecasts ({activeTrip?.tempRange || '-2°C to 7°C'}) and matching essential gear from Amazon, Decathlon, Myntra, and Flipkart.
-                </p>
+          {/* Non-blocking live analysis banner */}
+          {isAnalyzingSmartShop && (
+            <div className="p-3.5 rounded-2xl bg-gradient-to-r from-blue-50 via-teal-50 to-indigo-50 border border-blue-200 text-xs text-blue-900 flex items-center justify-between shadow-2xs animate-in fade-in">
+              <div className="flex items-center gap-2.5">
+                <div className="w-6 h-6 rounded-lg bg-blue-600 text-white flex items-center justify-center animate-spin shrink-0">
+                  <span className="material-symbols-outlined text-[15px]">sync</span>
+                </div>
+                <div>
+                  <span className="font-extrabold text-blue-950 block">
+                    Gemini AI is analyzing custom gear for &quot;{effectiveDestination}&quot;...
+                  </span>
+                  <span className="text-[11px] text-blue-700 font-medium">
+                    Current curated items remain ready to browse while AI refines climate-specific options.
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -1208,7 +1600,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
               <span>{smartShopError}</span>
               <button
                 type="button"
-                onClick={() => handleFetchSmartShop(true)}
+                onClick={() => handleFetchSmartShop(selectedThemeId, activeCustomDestination || undefined)}
                 className="font-bold underline text-amber-800 cursor-pointer"
               >
                 Retry
@@ -1231,7 +1623,8 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                 </span>
               </div>
 
-              {smartShopData.recommendations.map((item) => (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+                {smartShopData.recommendations.map((item) => (
                 <div
                   key={item.id}
                   className="bg-white rounded-3xl p-4 shadow-xs border border-slate-200/90 hover:shadow-md transition-all flex flex-col gap-3 group"
@@ -1252,6 +1645,27 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                         </span>
                       )}
                     </div>
+                  </div>
+
+                  {/* Product Photo Showcase */}
+                  <div className="relative w-full h-44 rounded-2xl bg-slate-100 overflow-hidden shadow-2xs group-hover:shadow-xs transition-all">
+                    <img
+                      src={resolveGearImage(item)}
+                      alt={item.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-bold shadow-xs border border-slate-200/50">
+                      <span className="material-symbols-outlined text-[13px] text-amber-600">
+                        storefront
+                      </span>
+                      <span>{item.retailer}</span>
+                    </div>
+                    {item.discount && (
+                      <div className="absolute bottom-2.5 left-2.5 px-2 py-0.5 rounded-lg bg-emerald-600 text-white text-[10px] font-extrabold shadow-xs">
+                        {item.discount}
+                      </div>
+                    )}
                   </div>
 
                   {/* Title & Price Line */}
@@ -1293,7 +1707,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                       </span>
                       <div className="flex-1">
                         <strong className="font-extrabold text-[11px] uppercase tracking-wide text-amber-900 block">
-                          Weather Match ({activeTrip?.tempRange || '-2°C to 7°C'})
+                          Weather Match ({effectiveTempRange})
                         </strong>
                         <p className="text-[11px] leading-snug mt-0.5 text-amber-900/90">
                           {item.weatherMatchReason}
@@ -1308,7 +1722,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                       </span>
                       <div className="flex-1">
                         <strong className="font-extrabold text-[11px] uppercase tracking-wide text-teal-900 block">
-                          Activity Match ({activeTrip?.activities?.[0] || 'Trip Itinerary'})
+                          Activity Match ({effectiveActivities[0] || 'Travel & Exploration'})
                         </strong>
                         <p className="text-[11px] leading-snug mt-0.5 text-teal-900/90">
                           {item.activityMatchReason}
@@ -1400,9 +1814,10 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                 </div>
               ))}
             </div>
-          )}
-        </div>
-      )}
+          </div>
+        )}
+      </div>
+    )}
 
       {/* ========================================================= */}
       {/* TAB 2 or SEARCH RESULTS: BROWSE ALL STORES & CATALOG */}
@@ -1527,7 +1942,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
 
           {/* Products Grid */}
           {filteredProducts.length > 0 ? (
-            <div className="flex flex-col gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
               {filteredProducts.map((prod) => (
                 <div
                   key={prod.id}

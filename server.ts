@@ -11,8 +11,27 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+const getPort = () => {
+  const portArgIndex = process.argv.indexOf('--port');
+  if (portArgIndex !== -1 && process.argv[portArgIndex + 1]) {
+    return parseInt(process.argv[portArgIndex + 1], 10);
+  }
+  if (process.env.DEFAULT_APP_PORT) {
+    return parseInt(process.env.DEFAULT_APP_PORT, 10);
+  }
+  if (process.env.APP_PORT) {
+    return parseInt(process.env.APP_PORT, 10);
+  }
+  // In the container environment, PORT may be set to 8080 for Cloud Run / Nginx.
+  // The Node application must listen on port 3000 which Nginx proxies to.
+  if (process.env.PORT && process.env.PORT !== '8080') {
+    return parseInt(process.env.PORT, 10);
+  }
+  return 3000;
+};
+
 const app = express();
-const port = process.env.PORT || 3000;
+const port = getPort();
 
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
@@ -20,7 +39,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 // Explicitly serve public assets (manifest, sw.js, icons, etc.) with proper MIME types & caching
 app.use(express.static(path.resolve(__dirname, 'public')));
 
-app.get(['/icons/*', '/apple-touch-icon.png', '/favicon.png', '/manifest.json', '/sw.js'], (req: Request, res: Response, next) => {
+app.get(['/icons/*', '/apple-touch-icon.png', '/favicon.png', '/manifest.json', '/sw.js'], (req: Request, res: Response, next: any) => {
   const cleanPath = req.path.replace(/^\//, '');
   const filePath = path.resolve(__dirname, 'public', cleanPath);
   if (fs.existsSync(filePath)) {
@@ -987,17 +1006,17 @@ Return JSON strictly:
 app.post('/api/ai/smart-shop-recommendations', async (req: Request, res: Response) => {
   try {
     const {
-      destination = 'Manali, Himachal Pradesh',
-      datesText = 'Upcoming Trip',
+      destination = 'Universal Travel Essentials',
+      datesText = 'Upcoming Journey',
       durationDays = 5,
-      tempRange = '-2°C to 7°C',
-      climateTitle = 'Sub-Zero Alpine',
-      climateNote = 'Freezing nighttime chills require layered down insulation and waterproof boots.',
-      activities = ['Snow Hikes', 'Cafes & Markets', 'Bonfire Evenings'],
-      purposes = ['Vacation', 'Adventure'],
-      style = 'Casual & Warm',
+      tempRange = '18°C to 28°C',
+      climateTitle = 'Travel Climate Benchmark',
+      climateNote = 'Pack versatile essentials, airline-compliant accessories, and comfortable walking gear.',
+      activities = ['Transit & Flights', 'Sightseeing & Walks', 'Dining & Cafes'],
+      purposes = ['Vacation', 'Exploration'],
+      style = 'Comfortable & Practical',
       budgetTier = 'Mid-range',
-      luggageType = 'Backpack (50–65L)',
+      luggageType = 'Backpack or Trolley',
       hasTechKit = true,
       unpackedOrToBuyItems = [],
     } = req.body;
@@ -1129,18 +1148,20 @@ Return strictly JSON format:
   }
 
   // High-fidelity fallback tailored to destination climate & activities
-  const destLower = (req.body?.destination || 'Manali').toLowerCase();
+  const destLower = (req.body?.destination || 'Universal').toLowerCase();
   const isCold =
     destLower.includes('manali') ||
-    destLower.includes('ladakh') ||
+    destLower.includes('snow') ||
+    destLower.includes('winter') ||
     destLower.includes('kashmir') ||
     destLower.includes('shimla') ||
     destLower.includes('spiti') ||
-    destLower.includes('paris');
+    destLower.includes('alps') ||
+    destLower.includes('switzerland');
 
-  const destination = req.body?.destination || (isCold ? 'Manali, Himachal Pradesh' : 'Goa, India');
-  const tempRange = req.body?.tempRange || (isCold ? '-2°C to 7°C' : '24°C to 32°C');
-  const activities: string[] = req.body?.activities || (isCold ? ['Snow Hikes', 'Cafes & Markets', 'Bonfire Evenings'] : ['Beach Leisure', 'Watersports', 'Sunset Cruises']);
+  const destination = req.body?.destination || (isCold ? 'Alpine Winter Destination' : 'Universal Travel Gear');
+  const tempRange = req.body?.tempRange || (isCold ? '-2°C to 7°C' : '20°C to 30°C');
+  const activities: string[] = req.body?.activities || (isCold ? ['Snow Hikes', 'Cafes & Markets', 'Bonfire Evenings'] : ['Transit & Travel', 'Sightseeing & Walks', 'Dining & Leisure']);
 
   const fallbackRecommendations = isCold
     ? [
@@ -1405,8 +1426,8 @@ app.all('/api/ai/popular-destinations', async (req: Request, res: Response) => {
 The current calendar month is ${month} (${season}).
 Analyze current seasonal interests (weather patterns, autumn foliage, early snow, pleasant palace weather, opening beach seasons, and festive getaways).
 
-Generate 6 trending, popular travel destinations tailored for ${month} / ${season}.
-Ensure a balanced mix of Himalayan crisp mountains, tropical warm coastlines, cultural heritage, and iconic international autumn spots.
+Generate 8 trending, popular travel destinations tailored for ${month} / ${season}.
+Ensure a balanced mix of Himalayan crisp mountains, tropical warm coastlines, cultural heritage, and iconic international spots.
 
 Return strictly JSON format:
 {
@@ -1415,19 +1436,19 @@ Return strictly JSON format:
   "destinations": [
     {
       "id": "slug-id",
-      "destination": "Name of city/region (e.g. Manali, Jaipur, Goa, Kyoto, Munnar, Zermatt)",
+      "destination": "Name of city/region (e.g. Manali, Jaipur, Goa, Bali, Ladakh, Munnar, Kyoto, Zermatt)",
       "region": "State/Region (e.g. Himachal Pradesh, India)",
       "country": "India or country name",
       "tagline": "Captivating 1-line hook",
       "seasonTrendTag": "e.g. '🍁 Peak Autumn Foliage' | '❄️ Early Snow Season' | '🏖️ Beach Shacks Opening' | '🏰 Royal Heritage Season'",
-      "whyVisitNow": "2 sentences explaining the exact seasonal weather appeal and why October/autumn is the sweet spot.",
+      "whyVisitNow": "2 sentences explaining the exact seasonal weather appeal and why this month is the sweet spot.",
       "bestMonths": "e.g. Oct – Dec",
       "expectedTemp": "e.g. 2°C to 12°C",
       "climateBadge": "e.g. Crisp Alpine Freeze | Pleasant 24°C | Breezy Coastal 31°C",
       "trendingScore": number between 92 and 99,
       "theme": "mountains" | "beaches" | "heritage" | "international",
       "packingHighlights": ["Item 1", "Item 2", "Item 3"],
-      "tripId": "manali-2026" | "jaipur-2027" | "goa-2027" | "bali-2027" | "custom-slug"
+      "tripId": "manali-2026" | "jaipur-2027" | "goa-2027" | "bali-2027" | "ladakh-2026" | "munnar-kerala" | "kyoto-autumn" | "zermatt-alps"
     }
   ]
 }`;
@@ -1490,29 +1511,66 @@ Return strictly JSON format:
 
       if (response.text) {
         const parsed = JSON.parse(response.text.trim());
-        // Map images
-        const imageMap: Record<string, string> = {
-          manali: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEvBRRdHc-X3sCDHUZ1AWYTKQcvy7ZfXymzRAaTfDjYLEbYxBPmr00xcO-gTV-1uer-3Uvh9Ih6IVynu-CCptfkrwOqpvlGy9bcjwL1gQ2fO82qoR6WWu4SLGI6z_vMXEqoshVoQ7rlJRMkdefT8il98iytvY9fQKi_uVIuekvq2hQaCPV5d0IjmzasSCqeHjV5dBR16Kth06W21lgG40ajW7tJxThGW6UqJgQe5TgFsYr6uol-4pZ3A',
-          jaipur: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDcfszlFr0RIWqHwFOl4Slea-FLW534_Wx1OBHOHLyeDPPn0T5P7msW49C2mqvOEI2WVjqSjbuAhZPhuWwegkmbOZcgnotPc5AP3M3lv9DXwijW6wYp1VN2yCZ4kU5ceZQsAzggHKbKSjclj1xMOnlXPLtE9porGFCpVuzPRreImBa0A2vL5cuolHAGdqlbbdxFPdCL86qUqXsqkSbfjwAEQApR6AP_-QUXaj4I169MwFKrdAmxFbfqvg',
-          goa: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDGxOi4-uawzrMvpLNbL0S-6QJsHPVRMzGrMRzftn52ABKjdVPsiu-4C3R5eggXg74ifQVqKy-ztFqm-9M7u0pw-Nr2hU8nUT-XFcIS1xDsnb5tx8dmquvBB3s0X5H8-6eVfxDfU_w5z-xeSjwE37UB03sl5LqHX9v7XkQ-YC1WrlO6-rKIIHGK_2S6XqqyO5K7d8RJgHpkm0QDqymdHT570yr5rH_npMuX-QLriD7K-j9lU7MrIadH5w',
-          bali: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg',
-          kyoto: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80',
-          munnar: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80',
-          zermatt: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80',
+        const imageGalleryMap: Record<string, string[]> = {
+          manali: [
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuAEvBRRdHc-X3sCDHUZ1AWYTKQcvy7ZfXymzRAaTfDjYLEbYxBPmr00xcO-gTV-1uer-3Uvh9Ih6IVynu-CCptfkrwOqpvlGy9bcjwL1gQ2fO82qoR6WWu4SLGI6z_vMXEqoshVoQ7rlJRMkdefT8il98iytvY9fQKi_uVIuekvq2hQaCPV5d0IjmzasSCqeHjV5dBR16Kth06W21lgG40ajW7tJxThGW6UqJgQe5TgFsYr6uol-4pZ3A',
+            'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+          ],
+          jaipur: [
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuDcfszlFr0RIWqHwFOl4Slea-FLW534_Wx1OBHOHLyeDPPn0T5P7msW49C2mqvOEI2WVjqSjbuAhZPhuWwegkmbOZcgnotPc5AP3M3lv9DXwijW6wYp1VN2yCZ4kU5ceZQsAzggHKbKSjclj1xMOnlXPLtE9porGFCpVuzPRreImBa0A2vL5cuolHAGdqlbbdxFPdCL86qUqXsqkSbfjwAEQApR6AP_-QUXaj4I169MwFKrdAmxFbfqvg',
+            'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1603288967383-8a9d18cb3f84?auto=format&fit=crop&w=800&q=80',
+          ],
+          goa: [
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuDGxOi4-uawzrMvpLNbL0S-6QJsHPVRMzGrMRzftn52ABKjdVPsiu-4C3R5eggXg74ifQVqKy-ztFqm-9M7u0pw-Nr2hU8nUT-XFcIS1xDsnb5tx8dmquvBB3s0X5H8-6eVfxDfU_w5z-xeSjwE37UB03sl5LqHX9v7XkQ-YC1WrlO6-rKIIHGK_2S6XqqyO5K7d8RJgHpkm0QDqymdHT570yr5rH_npMuX-QLriD7K-j9lU7MrIadH5w',
+            'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1587922546307-776227941871?auto=format&fit=crop&w=800&q=80',
+          ],
+          bali: [
+            'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg',
+            'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=800&q=80',
+          ],
+          ladakh: [
+            'https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80',
+          ],
+          kyoto: [
+            'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80',
+          ],
+          munnar: [
+            'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
+          ],
+          zermatt: [
+            'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+          ],
         };
 
         const enriched = parsed.destinations.map((d: any) => {
           const lower = d.destination.toLowerCase();
-          let img = 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80';
-          for (const key of Object.keys(imageMap)) {
+          let imgs = [
+            'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+            'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
+          ];
+          for (const key of Object.keys(imageGalleryMap)) {
             if (lower.includes(key)) {
-              img = imageMap[key];
+              imgs = imageGalleryMap[key];
               break;
             }
           }
           return {
             ...d,
-            imageUrl: img,
+            imageUrl: imgs[0],
+            images: imgs,
           };
         });
 
@@ -1529,7 +1587,7 @@ Return strictly JSON format:
     console.error('Gemini popular destinations error:', err.message);
   }
 
-  // Fallback high-fidelity curated trending destinations based on current autumn / October interests
+  // Fallback high-fidelity curated trending destinations with 8 diverse spots and 3-photo galleries
   const fallbackDestinations = [
     {
       id: 'pop-manali',
@@ -1547,6 +1605,33 @@ Return strictly JSON format:
       packingHighlights: ['Merino Wool Thermals', 'Quechua Fleece Sweater', 'Touchscreen Gloves'],
       tripId: 'manali-2026',
       imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAEvBRRdHc-X3sCDHUZ1AWYTKQcvy7ZfXymzRAaTfDjYLEbYxBPmr00xcO-gTV-1uer-3Uvh9Ih6IVynu-CCptfkrwOqpvlGy9bcjwL1gQ2fO82qoR6WWu4SLGI6z_vMXEqoshVoQ7rlJRMkdefT8il98iytvY9fQKi_uVIuekvq2hQaCPV5d0IjmzasSCqeHjV5dBR16Kth06W21lgG40ajW7tJxThGW6UqJgQe5TgFsYr6uol-4pZ3A',
+      images: [
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuAEvBRRdHc-X3sCDHUZ1AWYTKQcvy7ZfXymzRAaTfDjYLEbYxBPmr00xcO-gTV-1uer-3Uvh9Ih6IVynu-CCptfkrwOqpvlGy9bcjwL1gQ2fO82qoR6WWu4SLGI6z_vMXEqoshVoQ7rlJRMkdefT8il98iytvY9fQKi_uVIuekvq2hQaCPV5d0IjmzasSCqeHjV5dBR16Kth06W21lgG40ajW7tJxThGW6UqJgQe5TgFsYr6uol-4pZ3A',
+        'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+      ],
+    },
+    {
+      id: 'pop-goa',
+      destination: 'Goa',
+      region: 'Konkan Coast, India',
+      country: 'India',
+      tagline: 'Beach shacks reopening & serene turquoise waters post-monsoon',
+      seasonTrendTag: '🏖️ Shacks Reopening Season',
+      whyVisitNow: 'October marks the start of the coastal season: monsoons have subsided, waters are calm, and beaches are clean before peak holiday congestion.',
+      bestMonths: 'Oct – Apr',
+      expectedTemp: '24°C to 32°C',
+      climateBadge: 'Breezy Tropical Coast',
+      trendingScore: 96,
+      theme: 'beaches',
+      packingHighlights: ['Linen Vacation Shirt', 'Reef-Safe SPF 50', 'Quick-Dry Swimwear'],
+      tripId: 'goa-2027',
+      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDGxOi4-uawzrMvpLNbL0S-6QJsHPVRMzGrMRzftn52ABKjdVPsiu-4C3R5eggXg74ifQVqKy-ztFqm-9M7u0pw-Nr2hU8nUT-XFcIS1xDsnb5tx8dmquvBB3s0X5H8-6eVfxDfU_w5z-xeSjwE37UB03sl5LqHX9v7XkQ-YC1WrlO6-rKIIHGK_2S6XqqyO5K7d8RJgHpkm0QDqymdHT570yr5rH_npMuX-QLriD7K-j9lU7MrIadH5w',
+      images: [
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuDGxOi4-uawzrMvpLNbL0S-6QJsHPVRMzGrMRzftn52ABKjdVPsiu-4C3R5eggXg74ifQVqKy-ztFqm-9M7u0pw-Nr2hU8nUT-XFcIS1xDsnb5tx8dmquvBB3s0X5H8-6eVfxDfU_w5z-xeSjwE37UB03sl5LqHX9v7XkQ-YC1WrlO6-rKIIHGK_2S6XqqyO5K7d8RJgHpkm0QDqymdHT570yr5rH_npMuX-QLriD7K-j9lU7MrIadH5w',
+        'https://images.unsplash.com/photo-1512343879784-a960bf40e7f2?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1587922546307-776227941871?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     {
       id: 'pop-jaipur',
@@ -1564,40 +1649,55 @@ Return strictly JSON format:
       packingHighlights: ['Comfortable Walking Sneakers', 'Evening Merino Shawl', 'Cotton Kurtas'],
       tripId: 'jaipur-2027',
       imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDcfszlFr0RIWqHwFOl4Slea-FLW534_Wx1OBHOHLyeDPPn0T5P7msW49C2mqvOEI2WVjqSjbuAhZPhuWwegkmbOZcgnotPc5AP3M3lv9DXwijW6wYp1VN2yCZ4kU5ceZQsAzggHKbKSjclj1xMOnlXPLtE9porGFCpVuzPRreImBa0A2vL5cuolHAGdqlbbdxFPdCL86qUqXsqkSbfjwAEQApR6AP_-QUXaj4I169MwFKrdAmxFbfqvg',
+      images: [
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuDcfszlFr0RIWqHwFOl4Slea-FLW534_Wx1OBHOHLyeDPPn0T5P7msW49C2mqvOEI2WVjqSjbuAhZPhuWwegkmbOZcgnotPc5AP3M3lv9DXwijW6wYp1VN2yCZ4kU5ceZQsAzggHKbKSjclj1xMOnlXPLtE9porGFCpVuzPRreImBa0A2vL5cuolHAGdqlbbdxFPdCL86qUqXsqkSbfjwAEQApR6AP_-QUXaj4I169MwFKrdAmxFbfqvg',
+        'https://images.unsplash.com/photo-1599661046289-e31897846e41?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1603288967383-8a9d18cb3f84?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     {
-      id: 'pop-goa',
-      destination: 'Goa',
-      region: 'Konkan Coast, India',
-      country: 'India',
-      tagline: 'Beach shacks reopening & serene turquoise waters post-monsoon',
-      seasonTrendTag: '🏖️ Shacks Reopening Season',
-      whyVisitNow: 'October marks the start of the coastal season: monsoons have subsided, waters are calm, and beaches are clean before peak holiday congestion.',
-      bestMonths: 'Oct – Apr',
-      expectedTemp: '24°C to 32°C',
-      climateBadge: 'Breezy Tropical Coast',
+      id: 'pop-bali',
+      destination: 'Bali',
+      region: 'Indonesia',
+      country: 'Indonesia',
+      tagline: 'Lush tropical paradise, cliffside temples & tranquil waterfalls',
+      seasonTrendTag: '🌴 Island Tropical Haven',
+      whyVisitNow: 'Sunny tropical beach vibes with comfortable humidity, great surf breaks, and scenic cafe sunsets across Canggu and Uluwatu.',
+      bestMonths: 'Year Round (High in Oct)',
+      expectedTemp: '24°C to 30°C',
+      climateBadge: 'Tropical Island 29°C',
       trendingScore: 94,
-      theme: 'beaches',
-      packingHighlights: ['Linen Vacation Shirt', 'Reef-Safe SPF 50', 'Quick-Dry Swimwear'],
-      tripId: 'goa-2027',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuDGxOi4-uawzrMvpLNbL0S-6QJsHPVRMzGrMRzftn52ABKjdVPsiu-4C3R5eggXg74ifQVqKy-ztFqm-9M7u0pw-Nr2hU8nUT-XFcIS1xDsnb5tx8dmquvBB3s0X5H8-6eVfxDfU_w5z-xeSjwE37UB03sl5LqHX9v7XkQ-YC1WrlO6-rKIIHGK_2S6XqqyO5K7d8RJgHpkm0QDqymdHT570yr5rH_npMuX-QLriD7K-j9lU7MrIadH5w',
+      theme: 'international',
+      packingHighlights: ['Water Shoes', 'Temple Modesty Sarong', 'Type C Travel Plug'],
+      tripId: 'bali-2027',
+      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg',
+      images: [
+        'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg',
+        'https://images.unsplash.com/photo-1537996194471-e657df975ab4?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1518548419970-58e3b4079ab2?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     {
-      id: 'pop-kyoto',
-      destination: 'Kyoto',
-      region: 'Kansai Region, Japan',
-      country: 'Japan',
-      tagline: 'Fiery crimson momiji maple temples & crisp autumn air',
-      seasonTrendTag: '🍁 Peak Autumn Foliage',
-      whyVisitNow: 'World-renowned Japanese maple tree turn brilliant fiery crimson against ancient zen temples, offering unmatched seasonal photography.',
-      bestMonths: 'Oct – Nov',
-      expectedTemp: '11°C to 20°C',
-      climateBadge: 'Mild & Crisp Autumn',
-      trendingScore: 96,
-      theme: 'international',
-      packingHighlights: ['Universal Power Adapter', 'Slip-on Walking Shoes', 'Lightweight Cardigan'],
-      tripId: 'kyoto-autumn',
-      imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80',
+      id: 'pop-ladakh',
+      destination: 'Ladakh',
+      region: 'Trans-Himalayas, India',
+      country: 'India',
+      tagline: 'High-altitude azure lakes, stark moonscapes & Tibetan prayer flags',
+      seasonTrendTag: '🏔️ High Mountain Frontier',
+      whyVisitNow: 'Last chance to experience Pangong Tso and Khardung La under crystal blue skies before high Himalayan mountain passes close for winter snowfall.',
+      bestMonths: 'May – Oct',
+      expectedTemp: '-4°C to 10°C',
+      climateBadge: 'Sub-Zero High Altitude',
+      trendingScore: 93,
+      theme: 'mountains',
+      packingHighlights: ['Diamox Altitude Kit', 'UV-400 Polarized Shades', 'Fleece-Lined Beanie'],
+      tripId: 'ladakh-2026',
+      imageUrl: 'https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=800&q=80',
+      images: [
+        'https://images.unsplash.com/photo-1581793745862-99fde7fa73d2?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1626621341517-bbf3d9990a23?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     {
       id: 'pop-munnar',
@@ -1615,23 +1715,55 @@ Return strictly JSON format:
       packingHighlights: ['Rain Poncho', 'Trekking Shoes', 'Light Windbreaker'],
       tripId: 'munnar-kerala',
       imageUrl: 'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80',
+      images: [
+        'https://images.unsplash.com/photo-1602216056096-3b40cc0c9944?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1593693397690-362cb9666fc2?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1544735716-392fe2489ffa?auto=format&fit=crop&w=800&q=80',
+      ],
     },
     {
-      id: 'pop-bali',
-      destination: 'Bali',
-      region: 'Indonesia',
-      country: 'Indonesia',
-      tagline: 'Lush tropical paradise, cliffside temples & tranquil waterfalls',
-      seasonTrendTag: '🌴 Island Tropical Haven',
-      whyVisitNow: 'Sunny tropical beach vibes with comfortable humidity, great surf breaks, and scenic cafe sunsets across Canggu and Uluwatu.',
-      bestMonths: 'Year Round (High in Oct)',
-      expectedTemp: '24°C to 30°C',
-      climateBadge: 'Tropical Island 29°C',
-      trendingScore: 91,
+      id: 'pop-kyoto',
+      destination: 'Kyoto',
+      region: 'Kansai Region, Japan',
+      country: 'Japan',
+      tagline: 'Fiery crimson momiji maple temples & crisp autumn air',
+      seasonTrendTag: '🍁 Peak Autumn Foliage',
+      whyVisitNow: 'World-renowned Japanese maple tree turn brilliant fiery crimson against ancient zen temples, offering unmatched seasonal photography.',
+      bestMonths: 'Oct – Nov',
+      expectedTemp: '11°C to 20°C',
+      climateBadge: 'Mild & Crisp Autumn',
+      trendingScore: 96,
       theme: 'international',
-      packingHighlights: ['Water Shoes', 'Temple Modesty Sarong', 'Type C Travel Plug'],
-      tripId: 'bali-2027',
-      imageUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg',
+      packingHighlights: ['Universal Power Adapter', 'Slip-on Walking Shoes', 'Lightweight Cardigan'],
+      tripId: 'kyoto-autumn',
+      imageUrl: 'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80',
+      images: [
+        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1503899036084-c55cdd92da26?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=800&q=80',
+      ],
+    },
+    {
+      id: 'pop-zermatt',
+      destination: 'Zermatt',
+      region: 'Valais, Switzerland',
+      country: 'Switzerland',
+      tagline: 'Iconic Matterhorn alpine peak & golden European autumn larches',
+      seasonTrendTag: '🏔️ Alpine Autumn Grandeur',
+      whyVisitNow: 'October delivers crisp mountain air, golden larch forests, and pristine glacier viewpoints with uncrowded Swiss trains and mountain hotels.',
+      bestMonths: 'Jun – Oct',
+      expectedTemp: '1°C to 9°C',
+      climateBadge: 'Alpine Alpine 5°C',
+      trendingScore: 94,
+      theme: 'international',
+      packingHighlights: ['Down Insulated Parka', 'Thermal Gloves', 'European Plug Adapter'],
+      tripId: 'zermatt-alps',
+      imageUrl: 'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80',
+      images: [
+        'https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=800&q=80',
+        'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=800&q=80',
+      ],
     },
   ];
 
@@ -1900,8 +2032,8 @@ async function startServer() {
     });
   }
 
-  app.listen(port, () => {
-    console.log(`TripSwipe server listening on port ${port}`);
+  app.listen(port, '0.0.0.0', () => {
+    console.log(`TripSwipe server listening on 0.0.0.0:${port}`);
   });
 }
 

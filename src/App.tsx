@@ -22,7 +22,6 @@ import { CuratedTripActionModal } from './components/CuratedTripActionModal';
 import { ShareAppModal } from './components/ShareAppModal';
 import { AITravelAdvisorModal } from './components/AITravelAdvisorModal';
 import { AILuggageAuditModal } from './components/AILuggageAuditModal';
-import { AnimatePhotoToVideoModal } from './components/AnimatePhotoToVideoModal';
 import { MobileInstallModal } from './components/MobileInstallModal';
 import { PackingItem, Trip } from './types';
 import { testConnection } from './firebase';
@@ -48,19 +47,10 @@ const AppContent: React.FC = () => {
   const [isAIAdvisorOpen, setIsAIAdvisorOpen] = useState(false);
   const [aiAdvisorPrompt, setAiAdvisorPrompt] = useState<string | undefined>(undefined);
   const [isAILuggageAuditOpen, setIsAILuggageAuditOpen] = useState(false);
-  const [isAnimateVideoOpen, setIsAnimateVideoOpen] = useState(false);
   const [isInstallModalOpen, setIsInstallModalOpen] = useState(false);
-  const [animateVideoInitialImage, setAnimateVideoInitialImage] = useState<string | undefined>(undefined);
-  const [animateVideoInitialTitle, setAnimateVideoInitialTitle] = useState<string | undefined>(undefined);
   const [curatedActionDestination, setCuratedActionDestination] = useState<string | null>(null);
   const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<PackingItem | null>(null);
-
-  const handleOpenAnimateVideo = (imageUrl?: string, title?: string) => {
-    setAnimateVideoInitialImage(imageUrl);
-    setAnimateVideoInitialTitle(title);
-    setIsAnimateVideoOpen(true);
-  };
 
   // Initial connection test & auto first-time tour check
   useEffect(() => {
@@ -167,8 +157,12 @@ const AppContent: React.FC = () => {
             setAiAdvisorPrompt(undefined);
             setIsAIAdvisorOpen(true);
           }}
-          onOpenAnimateVideo={() => handleOpenAnimateVideo()}
           onOpenInstallMobile={() => setIsInstallModalOpen(true)}
+          currentTab={currentTab}
+          onSelectTab={(tab) => {
+            setCurrentView('main');
+            setCurrentTab(tab);
+          }}
         />
       )}
 
@@ -212,7 +206,6 @@ const AppContent: React.FC = () => {
               setIsAIAdvisorOpen(true);
             }}
             onOpenAILuggageAudit={() => setIsAILuggageAuditOpen(true)}
-            onAnimateHeroVideo={handleOpenAnimateVideo}
           />
         )}
 
@@ -242,7 +235,6 @@ const AppContent: React.FC = () => {
                 onOpenDeck={() => setCurrentView('deck')}
                 onNavigateTab={(tab) => setCurrentTab(tab)}
                 onOpenWalkaround={() => setIsWalkaroundOpen(true)}
-                onOpenAnimateVideo={handleOpenAnimateVideo}
                 onOpenInstallMobile={() => setIsInstallModalOpen(true)}
               />
             )}
@@ -400,14 +392,6 @@ const AppContent: React.FC = () => {
           setAiAdvisorPrompt(prompt);
           setIsAIAdvisorOpen(true);
         }}
-      />
-
-      {/* Veo 3.1 Fast Video Generation Modal: Animate Images into Video */}
-      <AnimatePhotoToVideoModal
-        isOpen={isAnimateVideoOpen}
-        onClose={() => setIsAnimateVideoOpen(false)}
-        initialImageUrl={animateVideoInitialImage}
-        initialTitle={animateVideoInitialTitle}
       />
 
       {/* Mobile Testing & Android APK / WebAPK Installation Modal */}

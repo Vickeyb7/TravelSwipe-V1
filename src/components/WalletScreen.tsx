@@ -23,7 +23,7 @@ export const WalletScreen: React.FC<WalletScreenProps> = ({ onOpenAddDoc }) => {
   });
 
   return (
-    <div className="flex flex-col gap-4 pb-28 pt-20 px-4 max-w-md mx-auto animate-in fade-in duration-200">
+    <div className="flex flex-col gap-6 pb-28 pt-20 px-4 sm:px-6 lg:px-8 max-w-6xl xl:max-w-7xl mx-auto animate-in fade-in duration-200">
       {/* Trip Selector & Vault Badge Hero Section */}
       <div className="flex flex-col gap-2.5 bg-white p-4 rounded-2xl shadow-xs border border-slate-100">
         <div className="flex items-center justify-between">
@@ -152,7 +152,7 @@ export const WalletScreen: React.FC<WalletScreenProps> = ({ onOpenAddDoc }) => {
       </div>
 
       {/* Document Cards List */}
-      <div className="flex flex-col gap-3.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
         {filteredDocs.map((docItem) => (
           <div
             key={docItem.id}

@@ -346,7 +346,7 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
   const displayName = userProfile?.name && userProfile.name !== 'Aarav Sharma' ? userProfile.name : 'Traveller';
 
   return (
-    <div className="flex flex-col gap-4 pb-28 pt-20 px-4 max-w-md mx-auto animate-in fade-in duration-200">
+    <div className="pb-28 pt-20 px-4 sm:px-6 lg:px-8 max-w-6xl xl:max-w-7xl mx-auto animate-in fade-in duration-200">
       {/* Hidden file input for custom photo upload */}
       <input
         type="file"
@@ -363,8 +363,11 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
         </div>
       )}
 
-      {/* User Profile Header Card */}
-      <div className="relative overflow-hidden rounded-2xl bg-white p-4 shadow-xs border border-slate-100">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* Left Column: User Profile Card, Tour & Referral Sharing */}
+        <div className="lg:col-span-5 flex flex-col gap-5">
+          {/* User Profile Header Card */}
+          <div className="relative overflow-hidden rounded-2xl bg-white p-4 shadow-xs border border-slate-100">
         <div className="flex items-center gap-3.5 relative z-10">
           {/* Avatar with Customizer Upload Trigger */}
           <div
@@ -586,7 +589,10 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           </button>
         </div>
       </section>
+    </div>
 
+    {/* Right Column: Preferences, Settings & Account Actions */}
+    <div className="lg:col-span-7 flex flex-col gap-5">
       {/* Travel Preferences Section */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center justify-between px-1">
@@ -882,6 +888,8 @@ export const ProfileScreen: React.FC<ProfileScreenProps> = ({
           TripSwipe v3.4.1 (Build 890) • Made for Explorers
         </div>
       </div>
+    </div>
+  </div>
 
       {/* MODAL 1: Customize Packaging Style */}
       {isStyleModalOpen && (

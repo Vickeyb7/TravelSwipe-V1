@@ -74,7 +74,7 @@ export const PersonalizedChecklistScreen: React.FC<PersonalizedChecklistScreenPr
   };
 
   return (
-    <div className="flex flex-col gap-4 pb-32 pt-20 px-4 max-w-md mx-auto animate-in fade-in duration-200">
+    <div className="flex flex-col gap-5 pb-32 pt-20 px-4 sm:px-6 lg:px-8 max-w-6xl xl:max-w-7xl mx-auto animate-in fade-in duration-200">
       {/* Top Nav Subheader */}
       <div className="flex items-center justify-between">
         <button
@@ -186,7 +186,7 @@ export const PersonalizedChecklistScreen: React.FC<PersonalizedChecklistScreenPr
       </div>
 
       {/* Checklist Cards Stack */}
-      <div className="flex flex-col gap-2.5">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
         {filteredItems.map((item) => {
           const isPacked = item.status === 'packed';
           const isToBuy = item.status === 'to_buy';

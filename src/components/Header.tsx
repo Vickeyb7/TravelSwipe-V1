@@ -1,5 +1,6 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
+import { NavTab } from './BottomNav';
 
 interface HeaderProps {
   title?: string;
@@ -9,8 +10,9 @@ interface HeaderProps {
   onOpenProfile?: () => void;
   onOpenShare?: () => void;
   onOpenAIAdvisor?: () => void;
-  onOpenAnimateVideo?: () => void;
   onOpenInstallMobile?: () => void;
+  currentTab?: NavTab;
+  onSelectTab?: (tab: NavTab) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -21,15 +23,16 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenProfile,
   onOpenShare,
   onOpenAIAdvisor,
-  onOpenAnimateVideo,
   onOpenInstallMobile,
+  currentTab,
+  onSelectTab,
 }) => {
   const { currentUser, userProfile } = useAuth();
 
   return (
     <header className="fixed top-0 w-full z-40 bg-[#f9f9ff]/95 backdrop-blur-xl border-b border-slate-200/60 shadow-[0_1px_8px_rgba(0,0,0,0.03)]">
-      {/* Main app bar */}
-      <div className="h-14 px-4 flex items-center justify-between gap-3">
+      {/* Main app bar with responsive max-w-7xl desktop width */}
+      <div className="h-14 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2.5 min-w-0">
           {showBack ? (
             <button
@@ -58,6 +61,35 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </div>
         </div>
+
+        {/* Desktop Navigation Links (Visible on desktop md+ viewports) */}
+        {onSelectTab && (
+          <nav className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 shadow-2xs">
+            {[
+              { id: 'home', label: 'Home', icon: 'explore' },
+              { id: 'my-trips', label: 'My Trips', icon: 'luggage' },
+              { id: 'shop', label: 'Gear Store', icon: 'shopping_bag' },
+              { id: 'wallet', label: 'Travel Wallet', icon: 'account_balance_wallet' },
+              { id: 'profile', label: 'Profile', icon: 'person' },
+            ].map((tab) => {
+              const isActive = currentTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => onSelectTab(tab.id as NavTab)}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    isActive
+                      ? 'bg-white text-blue-700 shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                  }`}
+                >
+                  <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
+                  <span>{tab.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        )}
 
         {/* Right action area */}
         <div className="flex items-center gap-1.5 flex-shrink-0">

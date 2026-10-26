@@ -1,0 +1,1062 @@
+import { SmartShopData } from '../components/ShopScreen';
+import { Trip } from '../types';
+
+export interface DestinationTheme {
+  id: string;
+  label: string;
+  icon: string;
+  destinationName: string;
+  tempRange: string;
+  climateTitle: string;
+  climateNote: string;
+  activities: string[];
+}
+
+export const DESTINATION_THEMES: DestinationTheme[] = [
+  {
+    id: 'universal',
+    label: 'Universal Essentials',
+    icon: 'travel_explore',
+    destinationName: 'Universal Travel Gear',
+    tempRange: '15°C to 28°C',
+    climateTitle: 'All-Climate Utility',
+    climateNote: 'Essential airline-compliant gear, power accessories, and modular packing tools.',
+    activities: ['Flight Transit', 'Road Trips', 'Hotel & Luggage Organization'],
+  },
+  {
+    id: 'beach',
+    label: 'Beach & Coastal Sun',
+    icon: 'beach_access',
+    destinationName: 'Goa & Tropical Coast',
+    tempRange: '26°C to 34°C',
+    climateTitle: 'Tropical Coastal Sun',
+    climateNote: 'Intense ocean UV and humidity require UPF 50+ sun defense and quick-dry apparel.',
+    activities: ['Beach Relaxation', 'Watersports', 'Sunset Cruises', 'Resort Dining'],
+  },
+  {
+    id: 'winter',
+    label: 'Snow & Alpine Chill',
+    icon: 'ac_unit',
+    destinationName: 'Manali & Alpine Slopes',
+    tempRange: '-4°C to 6°C',
+    climateTitle: 'Sub-Zero Alpine Freeze',
+    climateNote: 'Sub-zero temperatures demand heat-locking base layers, down jackets, and snow boots.',
+    activities: ['Snow Hiking', 'Solang Valley Activities', 'Bonfire Nights', 'Mountain Cafes'],
+  },
+  {
+    id: 'heritage',
+    label: 'Heritage & City Breaks',
+    icon: 'fort',
+    destinationName: 'Jaipur & Historic Cities',
+    tempRange: '18°C to 30°C',
+    climateTitle: 'Pleasant Sightseeing Weather',
+    climateNote: 'Extensive 15,000+ daily steps across monuments require high-cushion walking shoes and RFID bags.',
+    activities: ['Fort & Palace Exploration', 'Bazaar Shopping', 'City Walking Tours', 'Fine Dining'],
+  },
+  {
+    id: 'trekking',
+    label: 'High Altitude Trek',
+    icon: 'hiking',
+    destinationName: 'Ladakh & Himalayan Trails',
+    tempRange: '-6°C to 12°C',
+    climateTitle: 'High-Altitude Wind & UV',
+    climateNote: 'Rugged terrain and thin air demand ergonomic load support, Gore-Tex trail shoes, and trekking poles.',
+    activities: ['Pass Crossings', 'Trail Scrambles', 'Camp Stays', 'High-Altitude Photography'],
+  },
+  {
+    id: 'monsoon',
+    label: 'Monsoon & Rainforest',
+    icon: 'rainy',
+    destinationName: 'Western Ghats & Meghalaya',
+    tempRange: '20°C to 27°C',
+    climateTitle: 'Heavy Rainfall & Mist',
+    climateNote: 'Torrential rains require seam-sealed 10,000mm ponchos, rucksack rain covers, and dry bags.',
+    activities: ['Waterfall Treks', 'Scenic Mountain Drives', 'Rainforest Nature Walks'],
+  },
+];
+
+export const PRESET_SMART_SHOP: Record<string, SmartShopData> = {
+  universal: {
+    analysisSummary:
+      'Universal flight and road-trip gear optimized for domestic airline weight limits (15kg check-in / 7kg cabin), international power adapters, and organized compression cubes.',
+    climateBadge: 'All-Climate Travel Essentials',
+    activityHighlight: 'Flight Cabin Transit, Luggage Organization & Power Security',
+    estimatedShopBudgetINR: 5244,
+    recommendations: [
+      {
+        id: 'smart-powerbank-mi',
+        title: 'Mi 20,000mAh 18W Fast Charging Power Bank 3i',
+        category: 'Electronics & Gadgets',
+        weatherMatchReason: 'Regulated battery output safeguards your smartphones and cameras against unexpected transit drains.',
+        activityMatchReason: 'Meets DGCA / Indian airline regulations (under 100Wh) for cabin baggage carry.',
+        priceINR: 1699,
+        originalPriceINR: 2199,
+        discount: '23% OFF',
+        retailer: 'Amazon India',
+        rating: 4.6,
+        reviews: '124k',
+        badge: 'Flight Cabin Safe',
+        specPill: '74Wh Cabin Approved',
+        searchQuery: 'mi 20000mah power bank 3i',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=20000mah+power+bank',
+          decathlon: 'https://www.decathlon.in/search?query=power+bank',
+          myntra: 'https://www.myntra.com/powerbanks',
+          flipkart: 'https://www.flipkart.com/search?q=20000mah+power+bank',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=20000mah+power+bank',
+      },
+      {
+        id: 'smart-compression-cubes',
+        title: 'Compression Luggage Packing Cubes (6-Piece Set)',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Double-zipper compression system condenses bulky clothing to free up 60% luggage volume.',
+        activityMatchReason: 'Separates clean clothes from laundry and keeps suitcase neatly compartmentalized.',
+        priceINR: 899,
+        originalPriceINR: 1499,
+        discount: '40% OFF',
+        retailer: 'Amazon India',
+        rating: 4.7,
+        reviews: '8.4k',
+        badge: 'Amazon Choice',
+        specPill: '60% Space Saver',
+        searchQuery: 'compression packing cubes luggage',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=compression+packing+cubes',
+          decathlon: 'https://www.decathlon.in/search?query=packing+pouches',
+          myntra: 'https://www.myntra.com/travel-organizer',
+          flipkart: 'https://www.flipkart.com/search?q=packing+cubes',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=compression+packing+cubes',
+      },
+      {
+        id: 'smart-universal-adapter',
+        title: 'All-in-One Worldwide Travel Adapter with USB-C PD (35W)',
+        category: 'Electronics & Gadgets',
+        weatherMatchReason: 'Internal surge protector safeguards expensive electronics against fluctuating hotel voltages.',
+        activityMatchReason: 'Compatible across 150+ countries with UK, US, EU, and AU pins plus high-speed USB-C fast charging.',
+        priceINR: 1199,
+        originalPriceINR: 1899,
+        discount: '37% OFF',
+        retailer: 'Amazon India',
+        rating: 4.6,
+        reviews: '12.8k',
+        badge: 'Universal 150+ Countries',
+        specPill: '35W USB-C Fast Charge',
+        searchQuery: 'universal travel adapter usb c fast charge',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=universal+travel+adapter',
+          decathlon: 'https://www.decathlon.in/search?query=travel+adapter',
+          myntra: 'https://www.myntra.com/travel-accessories',
+          flipkart: 'https://www.flipkart.com/search?q=universal+adapter',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=universal+travel+adapter',
+      },
+      {
+        id: 'smart-forclaz-daypack',
+        title: 'Forclaz 20L Ultralight Packable Daypack Backpack',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Water-repellent ripstop nylon protects daily essentials against brief passing showers.',
+        activityMatchReason: 'Folds completely into its own small pocket for day excursions without taking suitcase space.',
+        priceINR: 599,
+        originalPriceINR: 899,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.8,
+        reviews: '19k',
+        badge: 'Decathlon Bestseller',
+        specPill: 'Weighs Only 145g',
+        searchQuery: 'forclaz 20l packable backpack',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=packable+backpack+20l',
+          decathlon: 'https://www.decathlon.in/search?query=packable+backpack',
+          myntra: 'https://www.myntra.com/backpacks',
+          flipkart: 'https://www.flipkart.com/search?q=packable+backpack',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=packable+backpack',
+      },
+      {
+        id: 'smart-tsa-locks',
+        title: 'TSA-Approved 3-Dial Cable Luggage Lock (2-Pack)',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'High-tensile braided steel cable withstands airport conveyor rough handling.',
+        activityMatchReason: 'Allows airport security to inspect luggage without snapping zippers or destroying locks.',
+        priceINR: 499,
+        originalPriceINR: 999,
+        discount: '50% OFF',
+        retailer: 'Amazon India',
+        rating: 4.5,
+        reviews: '6.7k',
+        badge: 'TSA Certified',
+        specPill: 'Flexible Cable Loop',
+        searchQuery: 'tsa approved luggage lock 2 pack',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=tsa+luggage+lock',
+          decathlon: 'https://www.decathlon.in/search?query=luggage+lock',
+          myntra: 'https://www.myntra.com/luggage-accessories',
+          flipkart: 'https://www.flipkart.com/search?q=tsa+lock',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=tsa+luggage+lock',
+      },
+      {
+        id: 'smart-quickdry-towel',
+        title: 'Nabaiji Microfiber Compact Quick-Dry Towel XL',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Dries 4x faster than standard cotton towels to avoid damp musty odours inside your luggage.',
+        activityMatchReason: 'Folds down to smartphone size with attached elastic loop for easy packing.',
+        priceINR: 349,
+        originalPriceINR: 499,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.7,
+        reviews: '23k',
+        badge: 'Fast Drying',
+        specPill: 'Dries in 15 Minutes',
+        searchQuery: 'microfiber quick dry travel towel xl',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=microfiber+travel+towel',
+          decathlon: 'https://www.decathlon.in/search?query=microfiber+towel',
+          myntra: 'https://www.myntra.com/towels',
+          flipkart: 'https://www.flipkart.com/search?q=microfiber+towel',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=microfiber+towel',
+      },
+    ],
+  },
+
+  beach: {
+    analysisSummary:
+      'High UV index and tropical seaside humidity require reef-friendly mineral sun defense, ultralight pure linen shirts, quick-dry swim trunks, and IPX8 water protection for gadgets.',
+    climateBadge: 'Tropical Coastal Sun (26°C – 34°C)',
+    activityHighlight: 'Beach Leisure, Watersports & Coastal Exploration',
+    estimatedShopBudgetINR: 5244,
+    recommendations: [
+      {
+        id: 'smart-mineral-sunscreen',
+        title: 'Reef-Safe SPF 50+ PA++++ Mineral Sunscreen (100ml)',
+        category: 'Toiletries & Meds',
+        weatherMatchReason: 'Broad spectrum zinc-oxide barrier blocks 98% of aggressive coastal UVA/UVB rays without eye stinging.',
+        activityMatchReason: 'Water and sweat resistant for up to 80 minutes during ocean swims and watersports.',
+        priceINR: 599,
+        originalPriceINR: 850,
+        discount: '30% OFF',
+        retailer: 'Amazon India',
+        rating: 4.6,
+        reviews: '6.4k',
+        badge: 'Reef-Safe & Non-Toxic',
+        specPill: 'SPF 50+ PA++++ 80m Water Safe',
+        searchQuery: 'reef safe mineral sunscreen spf 50',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=reef+safe+mineral+sunscreen+spf+50',
+          decathlon: 'https://www.decathlon.in/search?query=sunscreen',
+          myntra: 'https://www.myntra.com/sunscreen',
+          flipkart: 'https://www.flipkart.com/search?q=reef+safe+sunscreen',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=reef+safe+mineral+sunscreen+spf+50',
+      },
+      {
+        id: 'smart-linen-shirt',
+        title: 'Roadster 100% Pure Breathable Linen Vacation Shirt',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Open-weave flax linen allows instant cross-ventilation in humid 30°C+ coastal heat.',
+        activityMatchReason: 'Effortless relaxed styling perfect for beach cafes, shacks, and sunset parties.',
+        priceINR: 1299,
+        originalPriceINR: 2299,
+        discount: '43% OFF',
+        retailer: 'Myntra',
+        rating: 4.5,
+        reviews: '4.1k',
+        badge: 'Trending Resort Fit',
+        specPill: '100% Pure Flax Linen',
+        searchQuery: 'pure linen shirt men women vacation',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=linen+shirt+men+women',
+          decathlon: 'https://www.decathlon.in/search?query=breathable+shirt',
+          myntra: 'https://www.myntra.com/linen-shirts',
+          flipkart: 'https://www.flipkart.com/search?q=linen+shirt',
+        },
+        preferredRetailerUrl: 'https://www.myntra.com/linen-shirts',
+      },
+      {
+        id: 'smart-swim-shorts',
+        title: 'Nabaiji Quick-Dry UV50+ Board Swim Shorts',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Chlorine and saltwater resistant fabric dries in under 15 minutes in tropical ocean breeze.',
+        activityMatchReason: 'Features secure zippered pocket for room key and elastic drawstring for surf sessions.',
+        priceINR: 799,
+        originalPriceINR: 1199,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.7,
+        reviews: '7.8k',
+        badge: 'Decathlon Tested',
+        specPill: 'Chlorine & Saltwater Proof',
+        searchQuery: 'nabaiji quick dry swim shorts',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=quick+dry+swim+shorts',
+          decathlon: 'https://www.decathlon.in/search?query=swim+shorts',
+          myntra: 'https://www.myntra.com/swimwear',
+          flipkart: 'https://www.flipkart.com/search?q=swim+trunks',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=swim+shorts',
+      },
+      {
+        id: 'smart-polarized-sunglasses',
+        title: 'Fastrack Polarized UV400 Ocean Glare Sunglasses',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Polarized TAC lenses cut severe water surface glares and protect retinas from reflective UV.',
+        activityMatchReason: 'Ultralight impact-resistant polycarbonate frame stays comfortable through all-day boat rides.',
+        priceINR: 999,
+        originalPriceINR: 1899,
+        discount: '47% OFF',
+        retailer: 'Amazon India',
+        rating: 4.5,
+        reviews: '5.9k',
+        badge: 'Polarized UV400',
+        specPill: 'TAC Polarized Glare Block',
+        searchQuery: 'polarized uv400 sunglasses fastrack',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=polarized+sunglasses+uv400',
+          decathlon: 'https://www.decathlon.in/search?query=sunglasses',
+          myntra: 'https://www.myntra.com/sunglasses',
+          flipkart: 'https://www.flipkart.com/search?q=polarized+sunglasses',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=polarized+sunglasses+uv400',
+      },
+      {
+        id: 'smart-waterproof-pouch',
+        title: 'IPX8 Waterproof Floating Phone Pouch & Dry Bag',
+        category: 'Electronics & Gadgets',
+        weatherMatchReason: 'Full hermetic dual-seal prevents fine beach sand and saltwater corrosion from reaching ports.',
+        activityMatchReason: 'Touchscreen-sensitive TPU window allows shooting clear underwater photos up to 30 meters depth.',
+        priceINR: 399,
+        originalPriceINR: 799,
+        discount: '50% OFF',
+        retailer: 'Amazon India',
+        rating: 4.6,
+        reviews: '14k',
+        badge: 'IPX8 Certified',
+        specPill: 'Submersible to 30m',
+        searchQuery: 'ipx8 waterproof phone pouch floating',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=waterproof+phone+pouch',
+          decathlon: 'https://www.decathlon.in/search?query=waterproof+pouch',
+          myntra: 'https://www.myntra.com/travel-accessories',
+          flipkart: 'https://www.flipkart.com/search?q=waterproof+phone+cover',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=waterproof+phone+pouch',
+      },
+      {
+        id: 'smart-water-shoes',
+        title: 'Subea Aqua Non-Slip Quick-Drain Water Shoes',
+        category: 'Footwear & Boots',
+        weatherMatchReason: 'Breathable 3D mesh dries rapidly in the sun while shielding soles from scorching sand.',
+        activityMatchReason: '0.5cm studded rubber sole prevents painful cuts on sharp reef, barnacles, and slippery rocks.',
+        priceINR: 699,
+        originalPriceINR: 999,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.6,
+        reviews: '8.2k',
+        badge: 'Rock & Coral Guard',
+        specPill: 'Quick-Drain Studded Sole',
+        searchQuery: 'subea aqua water shoes decathlon',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=aqua+water+shoes',
+          decathlon: 'https://www.decathlon.in/search?query=water+shoes',
+          myntra: 'https://www.myntra.com/water-shoes',
+          flipkart: 'https://www.flipkart.com/search?q=aqua+shoes',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=water+shoes',
+      },
+    ],
+  },
+
+  winter: {
+    analysisSummary:
+      'Sub-zero alpine mountain weather demands a strict 3-tier layering system: moisture-wicking thermal innerwear, insulating fleece/merino mid-layers, and a windproof down jacket with snow boots.',
+    climateBadge: 'Sub-Zero Alpine Freeze (-4°C to 6°C)',
+    activityHighlight: 'Snow Hikes, Mountain Slopes & Bonfire Evenings',
+    estimatedShopBudgetINR: 11644,
+    recommendations: [
+      {
+        id: 'smart-vanheusen-thermals',
+        title: 'Van Heusen Heat-Lock Ultra Thermal Top & Bottom Set',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Sub-zero night lows require micro-poly base thermals to trap body core warmth.',
+        activityMatchReason: 'Essential foundation layer under trek pants to prevent rapid heat loss on snow trails.',
+        priceINR: 1199,
+        originalPriceINR: 1999,
+        discount: '40% OFF',
+        retailer: 'Amazon India',
+        rating: 4.7,
+        reviews: '5.2k',
+        badge: 'Amazon Prime 1-Day',
+        specPill: 'Heat-Lock Microfiber',
+        searchQuery: 'van heusen thermal set men women',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=van+heusen+thermal+set',
+          decathlon: 'https://www.decathlon.in/search?query=thermal+base+layer',
+          myntra: 'https://www.myntra.com/thermal-wear',
+          flipkart: 'https://www.flipkart.com/search?q=thermal+innerwear',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=van+heusen+thermal+set',
+      },
+      {
+        id: 'smart-quechua-snow-boots',
+        title: 'Quechua SH100 Warm Waterproof Snow Hiking Boots',
+        category: 'Footwear & Boots',
+        weatherMatchReason: 'Deep rubber Snowcontact lugs insulate feet from packed freezing snow and ice patches.',
+        activityMatchReason: 'Provides vital ankle support and slip prevention during mountain treks and valley hikes.',
+        priceINR: 2499,
+        originalPriceINR: 3499,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.8,
+        reviews: '4.6k',
+        badge: 'Decathlon Tested',
+        specPill: 'Snowcontact Lugs -10°C',
+        searchQuery: 'quechua sh100 waterproof snow boots',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=waterproof+snow+hiking+boots',
+          decathlon: 'https://www.decathlon.in/search?query=snow+boots',
+          myntra: 'https://www.myntra.com/trekking-shoes',
+          flipkart: 'https://www.flipkart.com/search?q=snow+hiking+boots',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=snow+boots',
+      },
+      {
+        id: 'smart-forclaz-puffer',
+        title: 'Forclaz MT500 Trekking Down Jacket (-5°C Rated)',
+        category: 'Clothing & Layers',
+        weatherMatchReason: '650-fill power down provides impenetrable wind resistance against icy mountain gales.',
+        activityMatchReason: 'Ultra-packable into its own pocket for cafe strolls and chilly bonfire nights.',
+        priceINR: 4999,
+        originalPriceINR: 7999,
+        discount: '37% OFF',
+        retailer: 'Decathlon',
+        rating: 4.8,
+        reviews: '3.1k',
+        badge: 'Sub-Zero Tested',
+        specPill: '650-Fill Power Down',
+        searchQuery: 'forclaz down jacket -5c',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=down+puffer+jacket+men+women',
+          decathlon: 'https://www.decathlon.in/search?query=forclaz+down+jacket',
+          myntra: 'https://www.myntra.com/puffer-jackets',
+          flipkart: 'https://www.flipkart.com/search?q=down+jacket',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=forclaz+down+jacket',
+      },
+      {
+        id: 'smart-merino-sweater',
+        title: '100% Pure Merino Wool Thermal Crewneck Travel Sweater',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Natural crimp in Australian merino wool traps warm insulating air pockets while breathing freely.',
+        activityMatchReason: 'Naturally odor-resistant for multi-day wear without requiring hotel laundry.',
+        priceINR: 1499,
+        originalPriceINR: 2499,
+        discount: '40% OFF',
+        retailer: 'Amazon India',
+        rating: 4.7,
+        reviews: '3.4k',
+        badge: 'Pure Australian Wool',
+        specPill: 'Odor-Resistant Thermoregulation',
+        searchQuery: 'merino wool sweater travel',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=merino+wool+sweater',
+          decathlon: 'https://www.decathlon.in/search?query=merino+wool',
+          myntra: 'https://www.myntra.com/sweaters',
+          flipkart: 'https://www.flipkart.com/search?q=merino+wool+sweater',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=merino+wool+sweater',
+      },
+      {
+        id: 'smart-boldfit-gloves',
+        title: 'Boldfit Windproof Touchscreen Alpine Thermal Gloves',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Conductive touchscreen index fingertip lets you take photos without exposing hands to frost chills.',
+        activityMatchReason: 'Critical during high-altitude scenic viewpoint photo stops and cold night outings.',
+        priceINR: 449,
+        originalPriceINR: 899,
+        discount: '50% OFF',
+        retailer: 'Amazon India',
+        rating: 4.5,
+        reviews: '7.8k',
+        badge: 'Amazon Prime 1-Day',
+        specPill: 'Touchscreen Sensitive',
+        searchQuery: 'boldfit windproof touchscreen winter gloves',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=touchscreen+winter+gloves',
+          decathlon: 'https://www.decathlon.in/search?query=hiking+gloves',
+          myntra: 'https://www.myntra.com/winter-gloves',
+          flipkart: 'https://www.flipkart.com/search?q=winter+gloves',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=boldfit+touchscreen+gloves',
+      },
+      {
+        id: 'smart-spf50-minimalist',
+        title: 'Minimalist Multi-Vitamin SPF 50 High Altitude Sunscreen',
+        category: 'Toiletries & Meds',
+        weatherMatchReason: 'Snow reflects up to 80% of ultraviolet solar rays, causing acute alpine sunburns even at sub-zero temperatures.',
+        activityMatchReason: 'Protects face and lips during full daytime outdoor exposure on mountain slopes.',
+        priceINR: 399,
+        originalPriceINR: 499,
+        discount: '20% OFF',
+        retailer: 'Amazon India',
+        rating: 4.6,
+        reviews: '18k',
+        badge: 'Dermatologist Tested',
+        specPill: 'SPF 50 PA++++',
+        searchQuery: 'minimalist spf 50 sunscreen',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=spf+50+sunscreen',
+          decathlon: 'https://www.decathlon.in/search?query=sunscreen',
+          myntra: 'https://www.myntra.com/sunscreen',
+          flipkart: 'https://www.flipkart.com/search?q=spf+50+sunscreen',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=minimalist+spf+50+sunscreen',
+      },
+    ],
+  },
+
+  heritage: {
+    analysisSummary:
+      'Long walking days navigating historic forts, crowded bazaars, and palaces call for superior arch-cushioned footwear, slash-proof RFID crossbody security, and breathable all-day fabrics.',
+    climateBadge: 'Pleasant Sightseeing Weather (18°C – 30°C)',
+    activityHighlight: 'Monument Walking Tours, Bazars & Palace Sightseeing',
+    estimatedShopBudgetINR: 7744,
+    recommendations: [
+      {
+        id: 'smart-skechers-gowalk',
+        title: 'Skechers GoWalk Arch Fit Ergonomic Walking Shoes',
+        category: 'Footwear & Boots',
+        weatherMatchReason: 'Breathable engineered mesh upper keeps feet aerated during long warm sunny afternoon tours.',
+        activityMatchReason: 'Podiatrist-certified arch support absorbs shock over 15,000+ daily steps across cobblestones and stairs.',
+        priceINR: 3499,
+        originalPriceINR: 5499,
+        discount: '36% OFF',
+        retailer: 'Amazon India',
+        rating: 4.7,
+        reviews: '14.2k',
+        badge: 'Arch Fit Certified',
+        specPill: '20,000 Steps Shock Absorption',
+        searchQuery: 'skechers gowalk arch fit shoes',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=skechers+gowalk+arch+fit',
+          decathlon: 'https://www.decathlon.in/search?query=walking+shoes',
+          myntra: 'https://www.myntra.com/skechers',
+          flipkart: 'https://www.flipkart.com/search?q=skechers+gowalk',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=skechers+gowalk+arch+fit',
+      },
+      {
+        id: 'smart-rfid-crossbody',
+        title: 'Anti-Theft RFID Protected Crossbody Travel Sling',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Water-resistant nylon resists dust, light drizzles, and bazaar spills.',
+        activityMatchReason: 'Slash-resistant strap and hidden RFID-blocking credit card slots protect against pickpockets in busy markets.',
+        priceINR: 1299,
+        originalPriceINR: 2499,
+        discount: '48% OFF',
+        retailer: 'Myntra',
+        rating: 4.6,
+        reviews: '3.9k',
+        badge: 'Anti-Theft Design',
+        specPill: 'RFID Blocking & Slash-Proof',
+        searchQuery: 'anti theft rfid travel crossbody sling',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=anti+theft+crossbody+bag',
+          decathlon: 'https://www.decathlon.in/search?query=crossbody+bag',
+          myntra: 'https://www.myntra.com/crossbody-bags',
+          flipkart: 'https://www.flipkart.com/search?q=anti+theft+sling+bag',
+        },
+        preferredRetailerUrl: 'https://www.myntra.com/crossbody-bags',
+      },
+      {
+        id: 'smart-windproof-umbrella',
+        title: 'Compact Windproof Auto Open/Close Pocket Umbrella',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Teflon-coated canopy repels intense afternoon sunshine (UPF 50+) and sudden unexpected showers.',
+        activityMatchReason: 'Folds down to 28cm and weighs only 350g to fit easily into your day sling.',
+        priceINR: 599,
+        originalPriceINR: 1199,
+        discount: '50% OFF',
+        retailer: 'Amazon India',
+        rating: 4.5,
+        reviews: '8.6k',
+        badge: 'Wind Resistant',
+        specPill: 'UPF 50+ Sun & Rain Shield',
+        searchQuery: 'windproof compact travel umbrella',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=windproof+travel+umbrella',
+          decathlon: 'https://www.decathlon.in/search?query=umbrella',
+          myntra: 'https://www.myntra.com/umbrellas',
+          flipkart: 'https://www.flipkart.com/search?q=pocket+umbrella',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=windproof+travel+umbrella',
+      },
+      {
+        id: 'smart-cotton-shirt',
+        title: 'Roadster Pure Breathable Casual Cotton Button-Down',
+        category: 'Clothing & Layers',
+        weatherMatchReason: '100% natural combed cotton delivers superior breathability under daytime museum and fort heat.',
+        activityMatchReason: 'Smart-casual profile suits temple visits, heritage dining, and evening rooftop lounges.',
+        priceINR: 899,
+        originalPriceINR: 1799,
+        discount: '50% OFF',
+        retailer: 'Myntra',
+        rating: 4.4,
+        reviews: '6.2k',
+        badge: 'All-Day Comfort',
+        specPill: '100% Combed Cotton',
+        searchQuery: 'pure cotton casual shirt men women',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=cotton+shirt+casual',
+          decathlon: 'https://www.decathlon.in/search?query=cotton+shirt',
+          myntra: 'https://www.myntra.com/casual-shirts',
+          flipkart: 'https://www.flipkart.com/search?q=cotton+shirt',
+        },
+        preferredRetailerUrl: 'https://www.myntra.com/casual-shirts',
+      },
+      {
+        id: 'smart-garment-steamer',
+        title: 'Philips Handheld Portable Travel Garment Steamer',
+        category: 'Electronics & Gadgets',
+        weatherMatchReason: 'High-temperature steam eliminates suitcase wrinkles and refreshes clothing without hotel laundry fees.',
+        activityMatchReason: 'Ready in 30 seconds with foldable handle; ideal for keeping photo outfits crisp.',
+        priceINR: 1899,
+        originalPriceINR: 2999,
+        discount: '37% OFF',
+        retailer: 'Amazon India',
+        rating: 4.6,
+        reviews: '11.5k',
+        badge: 'Travel Compact',
+        specPill: '1000W Fast Heat Up',
+        searchQuery: 'philips portable travel garment steamer',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=travel+garment+steamer',
+          decathlon: 'https://www.decathlon.in/search?query=accessories',
+          myntra: 'https://www.myntra.com/travel-appliances',
+          flipkart: 'https://www.flipkart.com/search?q=garment+steamer',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=travel+garment+steamer',
+      },
+      {
+        id: 'smart-digital-scale',
+        title: 'Travel Inspira Compact Digital Luggage Scale',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'High-precision sensor ensures your luggage stays strictly under 15kg before you reach airport check-in.',
+        activityMatchReason: 'Crucial for souvenir shopping trips to prevent expensive excess baggage charges at the airport.',
+        priceINR: 549,
+        originalPriceINR: 999,
+        discount: '45% OFF',
+        retailer: 'Amazon India',
+        rating: 4.7,
+        reviews: '19.4k',
+        badge: 'Amazon Choice',
+        specPill: 'Up to 50kg Precision',
+        searchQuery: 'digital luggage scale portable',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=digital+luggage+scale',
+          decathlon: 'https://www.decathlon.in/search?query=luggage+scale',
+          myntra: 'https://www.myntra.com/travel-accessories',
+          flipkart: 'https://www.flipkart.com/search?q=luggage+scale',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=digital+luggage+scale',
+      },
+    ],
+  },
+
+  trekking: {
+    analysisSummary:
+      'High alpine mountain expeditions require ergonomic 50L load distribution, rigid waterproof hiking boots with Vibram-grade soles, collapsible shock-absorbing trekking poles, and reliable night illumination.',
+    climateBadge: 'High-Altitude Wind & UV (-6°C to 12°C)',
+    activityHighlight: 'High Pass Crossings, Scrambles & Wilderness Camping',
+    estimatedShopBudgetINR: 13994,
+    recommendations: [
+      {
+        id: 'smart-forclaz-rucksack',
+        title: 'Forclaz Travel 500 50L Modular Trekking Rucksack',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Includes integrated seam-sealed rain cover to keep equipment dry during sudden mountain downpours.',
+        activityMatchReason: 'Full suitcase-style front zip opening allows rapid access to gear without emptying the bag.',
+        priceINR: 4999,
+        originalPriceINR: 6999,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.8,
+        reviews: '6.7k',
+        badge: '10-Year Warranty',
+        specPill: 'Ergonomic EasyFit System',
+        searchQuery: 'forclaz travel 500 50l rucksack',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=trekking+rucksack+50l',
+          decathlon: 'https://www.decathlon.in/search?query=forclaz+50l',
+          myntra: 'https://www.myntra.com/rucksacks',
+          flipkart: 'https://www.flipkart.com/search?q=50l+rucksack',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=forclaz+50l',
+      },
+      {
+        id: 'smart-quechua-mh500-shoes',
+        title: 'Quechua MH500 Waterproof Mountain Hiking Shoes',
+        category: 'Footwear & Boots',
+        weatherMatchReason: 'Waterproof breathable membrane keeps socks bone dry when crossing glacial streams and damp scree.',
+        activityMatchReason: 'Crosscontact rubber outsole with 5mm studs delivers traction on steep loose shale and gravel.',
+        priceINR: 3999,
+        originalPriceINR: 4999,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.7,
+        reviews: '5.1k',
+        badge: 'Trek Tested',
+        specPill: 'Waterproof Membrane 8h',
+        searchQuery: 'quechua mh500 waterproof hiking shoes',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=waterproof+hiking+shoes',
+          decathlon: 'https://www.decathlon.in/search?query=mh500+shoes',
+          myntra: 'https://www.myntra.com/hiking-shoes',
+          flipkart: 'https://www.flipkart.com/search?q=hiking+shoes',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=mh500+shoes',
+      },
+      {
+        id: 'smart-trekking-poles',
+        title: 'Forclaz Anti-Shock Collapsible Aluminium Trekking Poles (Pair)',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Tungsten carbide tips pierce hard ice patches and rocky scree without slipping.',
+        activityMatchReason: 'Absorbs up to 25% of knee joint impact during steep 1000m altitude descents.',
+        priceINR: 1499,
+        originalPriceINR: 2299,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.8,
+        reviews: '8.4k',
+        badge: 'Anti-Shock System',
+        specPill: 'Duralumin 7075 Alloy',
+        searchQuery: 'forclaz anti shock trekking poles pair',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=trekking+poles+pair',
+          decathlon: 'https://www.decathlon.in/search?query=trekking+poles',
+          myntra: 'https://www.myntra.com/trekking-gear',
+          flipkart: 'https://www.flipkart.com/search?q=trekking+poles',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=trekking+poles',
+      },
+      {
+        id: 'smart-headlamp-rechargeable',
+        title: 'Petzl / Forclaz 250 Lumens USB Rechargeable Headlamp',
+        category: 'Electronics & Gadgets',
+        weatherMatchReason: 'IPX4 weather-resistant casing withstands driving sleet and sub-zero night battery drain.',
+        activityMatchReason: 'Hands-free 70-meter beam with gentle red night mode for tent navigation without blinding others.',
+        priceINR: 1299,
+        originalPriceINR: 1999,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.8,
+        reviews: '12k',
+        badge: 'Rechargeable USB',
+        specPill: '250 Lumens + Red Light',
+        searchQuery: 'rechargeable headlamp 250 lumens',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=rechargeable+headlamp',
+          decathlon: 'https://www.decathlon.in/search?query=headlamp',
+          myntra: 'https://www.myntra.com/camping-gear',
+          flipkart: 'https://www.flipkart.com/search?q=headlamp',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=headlamp',
+      },
+      {
+        id: 'smart-hydration-bladder',
+        title: 'Decathlon 2L Hands-Free Hydration Water Bladder',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Taste-free antimicrobial TPU prevents plastic odour even after full exposure to high UV.',
+        activityMatchReason: 'Sip-tube with locking bite valve enables continuous hydration without stopping to unbuckle backpack.',
+        priceINR: 799,
+        originalPriceINR: 1199,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.6,
+        reviews: '7.9k',
+        badge: 'BPA-Free TPU',
+        specPill: '2.0 Liters Wide Slide Open',
+        searchQuery: 'decathlon 2l hydration bladder',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=hydration+bladder+2l',
+          decathlon: 'https://www.decathlon.in/search?query=water+bladder',
+          myntra: 'https://www.myntra.com/sports-accessories',
+          flipkart: 'https://www.flipkart.com/search?q=hydration+bladder',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=water+bladder',
+      },
+      {
+        id: 'smart-cargo-pants',
+        title: 'Quick-Dry Stretch Convertible Trekking Cargo Pants',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Wind-resistant 4-way stretch fabric sheds light snow flurries and dries quickly after river crossings.',
+        activityMatchReason: 'Converts into shorts via hidden knee zippers as daytime temperatures climb.',
+        priceINR: 1399,
+        originalPriceINR: 2499,
+        discount: '44% OFF',
+        retailer: 'Amazon India',
+        rating: 4.5,
+        reviews: '4.8k',
+        badge: 'Convertible Design',
+        specPill: 'Zip-Off Shorts & UPF 50+',
+        searchQuery: 'convertible trekking cargo pants quick dry',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=convertible+trekking+pants',
+          decathlon: 'https://www.decathlon.in/search?query=trekking+trousers',
+          myntra: 'https://www.myntra.com/cargo-trousers',
+          flipkart: 'https://www.flipkart.com/search?q=trekking+pants',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=convertible+trekking+pants',
+      },
+    ],
+  },
+
+  monsoon: {
+    analysisSummary:
+      'Tropical monsoon downpours require full 10,000mm waterproofing: taped seam ponchos that cover your rucksack, rapid-drain sandals with wet-rock traction, and airtight dry bags for electronics.',
+    climateBadge: 'Heavy Rainfall & Mist (20°C – 27°C)',
+    activityHighlight: 'Rainforest Hikes, Waterfall Treks & Misty Mountain Drives',
+    estimatedShopBudgetINR: 5244,
+    recommendations: [
+      {
+        id: 'smart-rain-poncho',
+        title: 'Quechua Arpenaz 100% Waterproof Hiking Rain Poncho',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Hydrostatic head rating of 10,000mm withstands intense non-stop torrential downpours.',
+        activityMatchReason: 'Extra rear volume expands to cover a 40L backpack completely while keeping arms free.',
+        priceINR: 999,
+        originalPriceINR: 1499,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.7,
+        reviews: '11.8k',
+        badge: '10,000mm Waterproof',
+        specPill: 'Fits Over 40L Backpack',
+        searchQuery: 'quechua waterproof rain poncho decathlon',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=waterproof+rain+poncho',
+          decathlon: 'https://www.decathlon.in/search?query=rain+poncho',
+          myntra: 'https://www.myntra.com/raincoats',
+          flipkart: 'https://www.flipkart.com/search?q=rain+poncho',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=rain+poncho',
+      },
+      {
+        id: 'smart-rain-cover-bag',
+        title: 'Decathlon 35-60L High-Visibility Backpack Rain Cover',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Seam-sealed PU-coated polyester forms an impenetrable shield against mud splatters and moisture.',
+        activityMatchReason: 'Fluorescent neon color with reflective strips keeps you visible along foggy mountain roads.',
+        priceINR: 399,
+        originalPriceINR: 599,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.8,
+        reviews: '15.6k',
+        badge: 'High Visibility',
+        specPill: 'Elastic Drawcord Sealed',
+        searchQuery: 'backpack rain cover 35-60l decathlon',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=backpack+rain+cover',
+          decathlon: 'https://www.decathlon.in/search?query=backpack+rain+cover',
+          myntra: 'https://www.myntra.com/backpack-covers',
+          flipkart: 'https://www.flipkart.com/search?q=bag+rain+cover',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=backpack+rain+cover',
+      },
+      {
+        id: 'smart-water-sandals',
+        title: 'Wildcraft Amphibia Quick-Drain Trail Water Sandals',
+        category: 'Footwear & Boots',
+        weatherMatchReason: 'Hydrophobic quick-dry webbing prevents foot fungal chafing and blisters in saturated conditions.',
+        activityMatchReason: 'Deep multi-directional lugged rubber sole grips slippery moss-covered stones in stream crossings.',
+        priceINR: 1699,
+        originalPriceINR: 2499,
+        discount: '32% OFF',
+        retailer: 'Amazon India',
+        rating: 4.5,
+        reviews: '5.2k',
+        badge: 'Wet Rock Grip',
+        specPill: 'Hydrophobic Webbing',
+        searchQuery: 'wildcraft quick drain water sandals',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=wildcraft+trail+sandals',
+          decathlon: 'https://www.decathlon.in/search?query=hiking+sandals',
+          myntra: 'https://www.myntra.com/wildcraft-sandals',
+          flipkart: 'https://www.flipkart.com/search?q=water+sandals',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=wildcraft+trail+sandals',
+      },
+      {
+        id: 'smart-dry-bag-10l',
+        title: 'Earth Pak Heavy-Duty Waterproof Dry Bag (10L)',
+        category: 'Adventure & Essentials',
+        weatherMatchReason: 'Commercial-grade 500D PVC roll-top seal stays 100% airtight and floats if dropped in rapid currents.',
+        activityMatchReason: 'Safely stores cameras, wallets, spare dry clothes, and drone batteries on waterfall hikes.',
+        priceINR: 899,
+        originalPriceINR: 1599,
+        discount: '44% OFF',
+        retailer: 'Amazon India',
+        rating: 4.8,
+        reviews: '9.3k',
+        badge: 'Submersible Floating',
+        specPill: '500D Heavy-Duty PVC',
+        searchQuery: 'waterproof dry bag 10l roll top',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=waterproof+dry+bag+10l',
+          decathlon: 'https://www.decathlon.in/search?query=dry+bag',
+          myntra: 'https://www.myntra.com/travel-bags',
+          flipkart: 'https://www.flipkart.com/search?q=dry+bag',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=waterproof+dry+bag+10l',
+      },
+      {
+        id: 'smart-silica-gel-packs',
+        title: 'Silica Gel Moisture Absorber Desiccant Packs (20-Pack)',
+        category: 'Electronics & Gadgets',
+        weatherMatchReason: 'Draws condensation out of luggage compartments in 95%+ relative monsoon humidity.',
+        activityMatchReason: 'Place inside camera bags and gadget pouches to prevent lens fungus and electronic corrosion.',
+        priceINR: 299,
+        originalPriceINR: 499,
+        discount: '40% OFF',
+        retailer: 'Amazon India',
+        rating: 4.6,
+        reviews: '7.1k',
+        badge: 'Moisture Trap',
+        specPill: 'Reusable Color Indicating',
+        searchQuery: 'silica gel packets moisture absorber',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=silica+gel+packets',
+          decathlon: 'https://www.decathlon.in/search?query=accessories',
+          myntra: 'https://www.myntra.com/travel-accessories',
+          flipkart: 'https://www.flipkart.com/search?q=silica+gel+packs',
+        },
+        preferredRetailerUrl: 'https://www.amazon.in/s?k=silica+gel+packets',
+      },
+      {
+        id: 'smart-rain-jacket',
+        title: 'Quechua NH100 Breathable Quick-Dry Rain Hiking Jacket',
+        category: 'Clothing & Layers',
+        weatherMatchReason: 'Hydrophilic coating blocks wind and continuous showers while passing perspiration outward.',
+        activityMatchReason: 'Ultra-lightweight design packs directly into its left hand pocket for emergency deployment.',
+        priceINR: 1799,
+        originalPriceINR: 2499,
+        discount: 'Decathlon Direct',
+        retailer: 'Decathlon',
+        rating: 4.6,
+        reviews: '13k',
+        badge: 'Breathable Shield',
+        specPill: '5,000mm Waterproof & Vented',
+        searchQuery: 'quechua nh100 waterproof rain jacket',
+        directSearchLinks: {
+          amazon: 'https://www.amazon.in/s?k=waterproof+rain+jacket',
+          decathlon: 'https://www.decathlon.in/search?query=rain+jacket',
+          myntra: 'https://www.myntra.com/rain-jackets',
+          flipkart: 'https://www.flipkart.com/search?q=rain+jacket',
+        },
+        preferredRetailerUrl: 'https://www.decathlon.in/search?query=rain+jacket',
+      },
+    ],
+  },
+};
+
+/**
+ * Intelligent preset matcher: analyzes trip destination, tags, and activities.
+ * If trip is null or undefined, defaults cleanly to 'universal' (NEVER forces Manali!).
+ */
+export function detectPresetForTrip(trip: Trip | null | undefined): string {
+  if (!trip) return 'universal';
+
+  const dest = (trip.destination || '').toLowerCase();
+  const region = (trip.region || '').toLowerCase();
+  const tag = (trip.tag || '').toLowerCase();
+  const climate = (trip.climateTitle || '').toLowerCase();
+  const activities = (trip.activities || []).join(' ').toLowerCase();
+  const allText = `${dest} ${region} ${tag} ${climate} ${activities}`;
+
+  // Winter check
+  if (
+    allText.includes('snow') ||
+    allText.includes('winter') ||
+    allText.includes('alpine') ||
+    allText.includes('sub-zero') ||
+    allText.includes('ice') ||
+    allText.includes('manali') ||
+    allText.includes('gulmarg') ||
+    allText.includes('kashmir') ||
+    allText.includes('shimla') ||
+    allText.includes('alps') ||
+    allText.includes('switzerland')
+  ) {
+    return 'winter';
+  }
+
+  // Beach check
+  if (
+    allText.includes('beach') ||
+    allText.includes('coast') ||
+    allText.includes('goa') ||
+    allText.includes('bali') ||
+    allText.includes('phuket') ||
+    allText.includes('andaman') ||
+    allText.includes('maldives') ||
+    allText.includes('tropical') ||
+    allText.includes('island') ||
+    allText.includes('resort') ||
+    allText.includes('watersport') ||
+    allText.includes('surf')
+  ) {
+    return 'beach';
+  }
+
+  // Trekking check
+  if (
+    allText.includes('trek') ||
+    allText.includes('hike') ||
+    allText.includes('altitude') ||
+    allText.includes('ladakh') ||
+    allText.includes('spiti') ||
+    allText.includes('himalaya') ||
+    allText.includes('pass') ||
+    allText.includes('scramble') ||
+    allText.includes('camp')
+  ) {
+    return 'trekking';
+  }
+
+  // Heritage & City check
+  if (
+    allText.includes('heritage') ||
+    allText.includes('fort') ||
+    allText.includes('palace') ||
+    allText.includes('jaipur') ||
+    allText.includes('udaipur') ||
+    allText.includes('monument') ||
+    allText.includes('city') ||
+    allText.includes('paris') ||
+    allText.includes('kyoto') ||
+    allText.includes('london') ||
+    allText.includes('museum')
+  ) {
+    return 'heritage';
+  }
+
+  // Monsoon check
+  if (
+    allText.includes('rain') ||
+    allText.includes('monsoon') ||
+    allText.includes('meghalaya') ||
+    allText.includes('kerala') ||
+    allText.includes('ghats') ||
+    allText.includes('waterfall')
+  ) {
+    return 'monsoon';
+  }
+
+  return 'universal';
+}

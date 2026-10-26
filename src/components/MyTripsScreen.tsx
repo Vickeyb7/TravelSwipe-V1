@@ -51,12 +51,12 @@ export const MyTripsScreen: React.FC<MyTripsScreenProps> = ({
   const freqCount = savedTrips.filter((t) => t.isFrequent).length;
 
   return (
-    <div className="flex flex-col gap-4 pb-28 pt-20 px-4 max-w-md mx-auto animate-in fade-in duration-200">
+    <div className="flex flex-col gap-6 pb-28 pt-20 px-4 sm:px-6 lg:px-8 max-w-6xl xl:max-w-7xl mx-auto animate-in fade-in duration-200">
       {/* Top Bar Title & Sub-action */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-extrabold text-slate-900 tracking-tight">My Trips</h1>
-          <p className="text-xs text-slate-500">Your upcoming getaways & curated gear lists</p>
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">My Trips</h1>
+          <p className="text-xs sm:text-sm text-slate-500">Your upcoming getaways & curated gear lists</p>
         </div>
         <button
           onClick={onPlanTrip}
@@ -166,7 +166,7 @@ export const MyTripsScreen: React.FC<MyTripsScreenProps> = ({
           </button>
         </div>
       ) : (
-        <div className="flex flex-col gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTrips.map((trip) => {
             const total = trip.items?.length || 40;
             const packed = trip.items?.filter((i) => i.status === 'packed').length || 0;
