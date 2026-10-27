@@ -7,6 +7,16 @@ import {
   detectPresetForTrip,
   DestinationTheme,
 } from '../utils/shopPresets';
+import { CachedGearImage } from './CachedGearImage';
+import {
+  precacheImageUrls,
+  saveAiShopDataToIDB,
+  loadAllAiShopDataFromIDB,
+  saveAiSearchToIDB,
+  loadAiSearchFromIDB,
+  getGearCacheStats,
+  clearGearCache,
+} from '../utils/indexedDBImageCache';
 
 export interface ShopProduct {
   id: string;
@@ -63,38 +73,49 @@ interface ShopScreenProps {
   onSelectItemDetails?: (item: PackingItem) => void;
 }
 
-// Curated image assets for travel gear
+// Verified authentic image assets for travel gear
 const IMAGES = {
-  sweaterMerino:
-    'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=600&q=80',
-  sweaterFleece:
-    'https://images.unsplash.com/photo-1544441893-675973e31985?auto=format&fit=crop&w=600&q=80',
-  sweaterKnit:
-    'https://images.unsplash.com/photo-1576871337622-98d48d1cf531?auto=format&fit=crop&w=600&q=80',
-  jacketDown:
-    'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=600&q=80',
-  sunscreen:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCz5a3hvzrHyxWHpJaIJacSH-CoPyxAtfXcaHbFzfALLEUIwz71lNFCyRA3mAORi9nMryqwHt1fN0tuAKO8kvAH0IXSxIEd7Gq7AYbJqyt-zmn-Iv7NzOYFVfSKj-EsFESHPblGk6b7sRZE2YRxVQnr1TC7uOrx4NeMVlxZtaR5t-S-V7mszgbhRzyOJu_nLNuyucWC6cCcol2-asZlz-6RICO2nDmWBEa-Efct4ycoLVNiXw-wlAYh1w',
-  linenShirt:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuD5fPefNvxwy5tOUHhuNFxWFP-4uSWHB9CMCzXbN19_QA_XRnHt701md0JmGUQ24FVVwN5Uzx6B12aUKrRAcyYrNCGBf8LGuYwGs-j0HlpSqQDXFSK2ccgrmwVrexP7DgDieU1xf7w0exIzPBc6XthdRp7x0OgWoOn7gtmP7hmzxUHg5gYmL0X_6wTfaKKonAJgiJaAjwmV5hMM6YahDix7Nf-IQZpv3Fm_L-jJoSC6hg_djlHSy2QkmA',
-  boots:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBe5Jj_X5S7cMsa8tx2wx5iIPT6B0OEgeL3pGoXh9jMSX2qoabM__4hJpSaFPM-8oMlGmB2XKIjEtutjMEkUASwIzESBkrflabJ88dIg4OESNupCQe9lsQAA5yFik82f9nrq2mFpoXURMLGpHxSsdAnpx3eBLtd5thEWtQToOdDCSwThEU38jj2hvXEULZc-ak7MRWnT2Ve-zJq8q8yJVHfDSuAxvfGGEevym3VIfM0CWb0M7qpt7K_Fw',
-  powerbank:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAANvFdMoHy74JhWyWroeDwnp2YozqvBksLiwAwgPjKeN7wDpzdXm3fyzZvtBGd_uhZs_vjK5rln4szTvV_7p1AwmlngFOMjreR2500AjxTnXwcG1MmpQkTBp3xXC-6j8vqlk0hiMcqDdqzeSqQ9OP735oXdu5HWcgOhQTyXDMpl5m97zTpxknDWud97nRqcwxHH19gJGewZkw6-AKN-ydz3MwDnCJv7J0JzExmWOtYTGvehCBfUHHkKA',
-  adapter:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuAaWWrjJWk1w5cpJIWOHKTRBxK3cVTAKFs7euiUS4nDes0H4QQppeFTHWwxdyg9kV7MJJevkLJDQ6oXnsHCP4lgy6EHDq9nY-4J1Z42Fz1oUC1HQv85IC_xqRcxs4zIE-jSnCCrDoDWL2WRksoIOBSIBTH1f_Vgo3XE-SJ2eggF8A5LwzxhzdQKEVKteGVDkU5XQEvStXRiEDYU7lcGaN64wxsv15Cg5MZTKe-TBoPS1_ns7SCA7uLY8A',
-  backpack:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuBe5Jj_X5S7cMsa8tx2wx5iIPT6B0OEgeL3pGoXh9jMSX2qoabM__4hJpSaFPM-8oMlGmB2XKIjEtutjMEkUASwIzESBkrflabJ88dIg4OESNupCQe9lsQAA5yFik82f9nrq2mFpoXURMLGpHxSsdAnpx3eBLtd5thEWtQToOdDCSwThEU38jj2hvXEULZc-ak7MRWnT2Ve-zJq8q8yJVHfDSuAxvfGGEevym3VIfM0CWb0M7qpt7K_Fw',
-  cubes:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuDcfszlFr0RIWqHwFOl4Slea-FLW534_Wx1OBHOHLyeDPPn0T5P7msW49C2mqvOEI2WVjqSjbuAhZPhuWwegkmbOZcgnotPc5AP3M3lv9DXwijW6wYp1VN2yCZ4kU5ceZQsAzggHKbKSjclj1xMOnlXPLtE9porGFCpVuzPRreImBa0A2vL5cuolHAGdqlbbdxFPdCL86qUqXsqkSbfjwAEQApR6AP_-QUXaj4I169MwFKrdAmxFbfqvg',
-  bottles:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCz5a3hvzrHyxWHpJaIJacSH-CoPyxAtfXcaHbFzfALLEUIwz71lNFCyRA3mAORi9nMryqwHt1fN0tuAKO8kvAH0IXSxIEd7Gq7AYbJqyt-zmn-Iv7NzOYFVfSKj-EsFESHPblGk6b7sRZE2YRxVQnr1TC7uOrx4NeMVlxZtaR5t-S-V7mszgbhRzyOJu_nLNuyucWC6cCcol2-asZlz-6RICO2nDmWBEa-Efct4ycoLVNiXw-wlAYh1w',
-  swimShorts:
-    'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg',
-  gloves:
-    'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80',
-  genericGear:
-    'https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=600&q=80',
+  sweaterMerino: '/images/products/merino-sweater.jpg',
+  sweaterFleece: '/images/products/fleece-sweater.jpg',
+  sweaterKnit: '/images/products/cable-sweater.jpg',
+  jacketDown: '/images/products/down-jacket.jpg',
+  sunscreen: '/images/products/mineral-sunscreen.jpg',
+  sunscreenTube: '/images/products/sunscreen-tube.jpg',
+  linenShirt: '/images/products/linen-shirt.jpg',
+  cottonShirt: '/images/products/cotton-shirt.jpg',
+  boots: '/images/products/snow-boots.jpg',
+  hikingShoes: '/images/products/hiking-shoes.jpg',
+  walkingShoes: '/images/products/walking-shoes.jpg',
+  waterShoes: '/images/products/water-shoes.jpg',
+  trailSandals: '/images/products/trail-sandals.jpg',
+  thermals: '/images/products/thermal-underwear.jpg',
+  powerbank: '/images/products/powerbank.jpg',
+  adapter: '/images/products/travel-adapter.jpg',
+  backpack: '/images/products/travel-backpack.jpg',
+  packableDaypack: '/images/products/packable-daypack.jpg',
+  trekkingRucksack: '/images/products/trekking-rucksack.jpg',
+  cubes: '/images/products/packing-cubes.jpg',
+  bottles: '/images/products/silicone-bottles.jpg',
+  swimShorts: '/images/products/swim-shorts.jpg',
+  gloves: '/images/products/winter-gloves.jpg',
+  luggageLock: '/images/products/luggage-lock.jpg',
+  luggageScale: '/images/products/luggage-scale.jpg',
+  garmentSteamer: '/images/products/garment-steamer.jpg',
+  waterproofPhonePouch: '/images/products/waterproof-phone-pouch.jpg',
+  quickdryTowel: '/images/products/quickdry-towel.jpg',
+  sunglasses: '/images/products/sunglasses.jpg',
+  crossbodyBag: '/images/products/crossbody-bag.jpg',
+  umbrella: '/images/products/umbrella.jpg',
+  trekkingPoles: '/images/products/trekking-poles.jpg',
+  headlamp: '/images/products/headlamp.jpg',
+  hydrationBladder: '/images/products/hydration-bladder.jpg',
+  cargoPants: '/images/products/cargo-pants.jpg',
+  rainPoncho: '/images/products/rain-poncho.jpg',
+  backpackRainCover: '/images/products/backpack-rain-cover.jpg',
+  dryBag: '/images/products/dry-bag.jpg',
+  silicaGel: '/images/products/silica-gel.jpg',
+  rainJacket: '/images/products/rain-jacket.jpg',
+  genericGear: '/images/products/travel-backpack.jpg',
 };
 
 // Smart image resolver that pairs products with relevant, realistic imagery
@@ -111,91 +132,127 @@ export function resolveGearImage(item: {
   const combined = `${id} ${t}`;
 
   if (combined.includes('powerbank') || combined.includes('power bank') || combined.includes('battery')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuAANvFdMoHy74JhWyWroeDwnp2YozqvBksLiwAwgPjKeN7wDpzdXm3fyzZvtBGd_uhZs_vjK5rln4szTvV_7p1AwmlngFOMjreR2500AjxTnXwcG1MmpQkTBp3xXC-6j8vqlk0hiMcqDdqzeSqQ9OP735oXdu5HWcgOhQTyXDMpl5m97zTpxknDWud97nRqcwxHH19gJGewZkw6-AKN-ydz3MwDnCJv7J0JzExmWOtYTGvehCBfUHHkKA';
+    return IMAGES.powerbank;
   }
   if (combined.includes('cube') || combined.includes('compression') || combined.includes('organizer')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuDcfszlFr0RIWqHwFOl4Slea-FLW534_Wx1OBHOHLyeDPPn0T5P7msW49C2mqvOEI2WVjqSjbuAhZPhuWwegkmbOZcgnotPc5AP3M3lv9DXwijW6wYp1VN2yCZ4kU5ceZQsAzggHKbKSjclj1xMOnlXPLtE9porGFCpVuzPRreImBa0A2vL5cuolHAGdqlbbdxFPdCL86qUqXsqkSbfjwAEQApR6AP_-QUXaj4I169MwFKrdAmxFbfqvg';
+    return IMAGES.cubes;
   }
   if (combined.includes('adapter') || combined.includes('charger') || combined.includes('plug')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuAaWWrjJWk1w5cpJIWOHKTRBxK3cVTAKFs7euiUS4nDes0H4QQppeFTHWwxdyg9kV7MJJevkLJDQ6oXnsHCP4lgy6EHDq9nY-4J1Z42Fz1oUC1HQv85IC_xqRcxs4zIE-jSnCCrDoDWL2WRksoIOBSIBTH1f_Vgo3XE-SJ2eggF8A5LwzxhzdQKEVKteGVDkU5XQEvStXRiEDYU7lcGaN64wxsv15Cg5MZTKe-TBoPS1_ns7SCA7uLY8A';
+    return IMAGES.adapter;
   }
-  if (combined.includes('daypack') || combined.includes('backpack') || combined.includes('rucksack') || combined.includes('50l') || combined.includes('travel 500')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuBe5Jj_X5S7cMsa8tx2wx5iIPT6B0OEgeL3pGoXh9jMSX2qoabM__4hJpSaFPM-8oMlGmB2XKIjEtutjMEkUASwIzESBkrflabJ88dIg4OESNupCQe9lsQAA5yFik82f9nrq2mFpoXURMLGpHxSsdAnpx3eBLtd5thEWtQToOdDCSwThEU38jj2hvXEULZc-ak7MRWnT2Ve-zJq8q8yJVHfDSuAxvfGGEevym3VIfM0CWb0M7qpt7K_Fw';
+  if (combined.includes('rucksack') || combined.includes('50l') || combined.includes('travel 500')) {
+    return IMAGES.trekkingRucksack;
   }
-  if (combined.includes('sunscreen') || combined.includes('spf') || combined.includes('lotion')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuCz5a3hvzrHyxWHpJaIJacSH-CoPyxAtfXcaHbFzfALLEUIwz71lNFCyRA3mAORi9nMryqwHt1fN0tuAKO8kvAH0IXSxIEd7Gq7AYbJqyt-zmn-Iv7NzOYFVfSKj-EsFESHPblGk6b7sRZE2YRxVQnr1TC7uOrx4NeMVlxZtaR5t-S-V7mszgbhRzyOJu_nLNuyucWC6cCcol2-asZlz-6RICO2nDmWBEa-Efct4ycoLVNiXw-wlAYh1w';
+  if (combined.includes('daypack') || combined.includes('packable daypack') || combined.includes('20l')) {
+    return IMAGES.packableDaypack;
   }
-  if (combined.includes('linen') || combined.includes('shirt') || combined.includes('button-down') || combined.includes('cotton')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuD5fPefNvxwy5tOUHhuNFxWFP-4uSWHB9CMCzXbN19_QA_XRnHt701md0JmGUQ24FVVwN5Uzx6B12aUKrRAcyYrNCGBf8LGuYwGs-j0HlpSqQDXFSK2ccgrmwVrexP7DgDieU1xf7w0exIzPBc6XthdRp7x0OgWoOn7gtmP7hmzxUHg5gYmL0X_6wTfaKKonAJgiJaAjwmV5hMM6YahDix7Nf-IQZpv3Fm_L-jJoSC6hg_djlHSy2QkmA';
+  if (combined.includes('backpack') || combined.includes('bag') || combined.includes('escape 500')) {
+    return IMAGES.backpack;
   }
-  if (combined.includes('swim') || combined.includes('trunk') || combined.includes('short')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuCe5LOTeBx46gjtld8dww-FG1fB2J5qq1FuIuFdwcKEsrUDzkCgT5QXRIS5T5Gn1lDGlRtxGUzOGcm4WV2U31o5AQ9aFiO_Una5KOdVFyLFijFzYLhxRiDj5083hkbax-5JZsFAmPaJUGpVZuxeQfJ8D48emw4OPK9JpLc9Y7H50w7ZN047vMUVcAsojfEXk_1xas9lCBNcMPkN365U7NZnRqZEcsgzaPA9hLpwkjn72e4nizqNVgGhSg';
+  if (combined.includes('minimalist') || combined.includes('multi-vitamin spf')) {
+    return IMAGES.sunscreenTube;
   }
-  if (combined.includes('sweater') || combined.includes('merino') || combined.includes('knit') || combined.includes('wool')) {
-    return 'https://images.unsplash.com/photo-1620799140408-edc6dcb6d633?auto=format&fit=crop&w=600&q=80';
+  if (combined.includes('sunscreen') || combined.includes('spf') || combined.includes('lotion') || combined.includes('sunblock')) {
+    return IMAGES.sunscreen;
   }
-  if (combined.includes('down') || combined.includes('puffer') || combined.includes('jacket') || combined.includes('forclaz mt500')) {
-    return 'https://images.unsplash.com/photo-1539533018447-63fcce2678e3?auto=format&fit=crop&w=600&q=80';
+  if (combined.includes('linen')) {
+    return IMAGES.linenShirt;
+  }
+  if (combined.includes('cotton shirt') || combined.includes('button-down') || combined.includes('casual cotton')) {
+    return IMAGES.cottonShirt;
+  }
+  if (combined.includes('swim') || combined.includes('trunk') || combined.includes('board swim shorts')) {
+    return IMAGES.swimShorts;
+  }
+  if (combined.includes('merino') || combined.includes('wool sweater')) {
+    return IMAGES.sweaterMerino;
+  }
+  if (combined.includes('fleece') || combined.includes('mh100 warm')) {
+    return IMAGES.sweaterFleece;
+  }
+  if (combined.includes('cable') || combined.includes('sweater') || combined.includes('knit') || combined.includes('pullover')) {
+    return IMAGES.sweaterKnit;
+  }
+  if (combined.includes('down') || combined.includes('puffer') || combined.includes('jacket') || combined.includes('omni-heat')) {
+    return IMAGES.jacketDown;
   }
   if (combined.includes('glove') || combined.includes('mittens')) {
-    return 'https://images.unsplash.com/photo-1584917865442-de89df76afd3?auto=format&fit=crop&w=600&q=80';
+    return IMAGES.gloves;
   }
-  if (combined.includes('boot') || combined.includes('snow hiking boots')) {
-    return 'https://lh3.googleusercontent.com/aida-public/AB6AXuBe5Jj_X5S7cMsa8tx2wx5iIPT6B0OEgeL3pGoXh9jMSX2qoabM__4hJpSaFPM-8oMlGmB2XKIjEtutjMEkUASwIzESBkrflabJ88dIg4OESNupCQe9lsQAA5yFik82f9nrq2mFpoXURMLGpHxSsdAnpx3eBLtd5thEWtQToOdDCSwThEU38jj2hvXEULZc-ak7MRWnT2Ve-zJq8q8yJVHfDSuAxvfGGEevym3VIfM0CWb0M7qpt7K_Fw';
+  if (combined.includes('thermal') || combined.includes('innerwear') || combined.includes('heat-lock') || combined.includes('van heusen') || combined.includes('long johns') || combined.includes('base layer')) {
+    return IMAGES.thermals;
   }
-  if (combined.includes('shoe') || combined.includes('sneaker') || combined.includes('gowalk') || combined.includes('mh500')) {
-    return 'https://images.unsplash.com/photo-1542291026-7eec264c27ff?auto=format&fit=crop&w=600&q=80';
+  if (combined.includes('snow boot') || combined.includes('snow hiking boots') || combined.includes('sh100')) {
+    return IMAGES.boots;
+  }
+  if (combined.includes('water shoes') || combined.includes('aqua') || combined.includes('subea')) {
+    return IMAGES.waterShoes;
+  }
+  if (combined.includes('sandal') || combined.includes('trail sandals') || combined.includes('amphibia')) {
+    return IMAGES.trailSandals;
+  }
+  if (combined.includes('gowalk') || combined.includes('walking shoes') || combined.includes('arch fit')) {
+    return IMAGES.walkingShoes;
+  }
+  if (combined.includes('mh500') || combined.includes('hiking shoes') || combined.includes('trekking shoes') || combined.includes('trail shoes')) {
+    return IMAGES.hikingShoes;
   }
   if (combined.includes('towel') || combined.includes('microfiber')) {
-    return 'https://images.unsplash.com/photo-1616627547584-bf28cee262db?auto=format&fit=crop&w=600&q=80';
+    return IMAGES.quickdryTowel;
   }
   if (combined.includes('lock') || combined.includes('tsa')) {
-    return 'https://images.unsplash.com/photo-1582139329536-e7284fece509?auto=format&fit=crop&w=600&q=80';
-  }
-  if (combined.includes('glass') || combined.includes('sunglass') || combined.includes('goggle')) {
-    return 'https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&w=600&q=80';
-  }
-  if (combined.includes('pouch') || combined.includes('dry bag') || combined.includes('waterproof dry bag')) {
-    return 'https://images.unsplash.com/photo-1544816155-12df9643f363?auto=format&fit=crop&w=600&q=80';
-  }
-  if (combined.includes('sandal') || combined.includes('water shoes') || combined.includes('aqua')) {
-    return 'https://images.unsplash.com/photo-1560769629-975ec94e6a86?auto=format&fit=crop&w=600&q=80';
-  }
-  if (combined.includes('thermal') || combined.includes('innerwear') || combined.includes('heat-lock') || combined.includes('van heusen')) {
-    return 'https://images.unsplash.com/photo-1521572267360-ee0c2909d518?auto=format&fit=crop&w=600&q=80';
-  }
-  if (combined.includes('crossbody') || combined.includes('sling') || combined.includes('rfid')) {
-    return 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80';
-  }
-  if (combined.includes('umbrella')) {
-    return 'https://images.unsplash.com/photo-1534447677768-be436bb09401?auto=format&fit=crop&w=600&q=80';
-  }
-  if (combined.includes('steamer') || combined.includes('iron')) {
-    return 'https://images.unsplash.com/photo-1585336261026-6d633f81e359?auto=format&fit=crop&w=600&q=80';
+    return IMAGES.luggageLock;
   }
   if (combined.includes('scale') || combined.includes('luggage scale')) {
-    return 'https://images.unsplash.com/photo-1584438784894-089d6a62b8fa?auto=format&fit=crop&w=600&q=80';
+    return IMAGES.luggageScale;
+  }
+  if (combined.includes('steamer') || combined.includes('garment steamer')) {
+    return IMAGES.garmentSteamer;
+  }
+  if (combined.includes('phone pouch') || combined.includes('waterproof pouch') || combined.includes('floating phone')) {
+    return IMAGES.waterproofPhonePouch;
+  }
+  if (combined.includes('glass') || combined.includes('sunglass') || combined.includes('goggle')) {
+    return IMAGES.sunglasses;
+  }
+  if (combined.includes('crossbody') || combined.includes('sling') || combined.includes('rfid')) {
+    return IMAGES.crossbodyBag;
+  }
+  if (combined.includes('umbrella')) {
+    return IMAGES.umbrella;
   }
   if (combined.includes('pole') || combined.includes('trekking pole')) {
-    return 'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80';
+    return IMAGES.trekkingPoles;
   }
   if (combined.includes('headlamp') || combined.includes('torch')) {
-    return 'https://images.unsplash.com/photo-1508873696983-2df5293cb32f?auto=format&fit=crop&w=600&q=80';
+    return IMAGES.headlamp;
   }
-  if (combined.includes('bladder') || combined.includes('hydration') || combined.includes('bottle') || combined.includes('flask')) {
-    return 'https://images.unsplash.com/photo-1523362628745-0c100150b504?auto=format&fit=crop&w=600&q=80';
+  if (combined.includes('bladder') || combined.includes('hydration')) {
+    return IMAGES.hydrationBladder;
   }
   if (combined.includes('cargo') || combined.includes('pant') || combined.includes('trouser')) {
-    return 'https://images.unsplash.com/photo-1517445312882-bc9910d016b7?auto=format&fit=crop&w=600&q=80';
+    return IMAGES.cargoPants;
   }
-  if (combined.includes('poncho') || combined.includes('raincoat') || combined.includes('rain jacket')) {
-    return 'https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&w=600&q=80';
+  if (combined.includes('poncho') || combined.includes('raincoat')) {
+    return IMAGES.rainPoncho;
   }
-  if (combined.includes('cover') || combined.includes('silica') || combined.includes('earbuds') || combined.includes('bivy')) {
-    return 'https://images.unsplash.com/photo-1509744645300-a2098b11871a?auto=format&fit=crop&w=600&q=80';
+  if (combined.includes('rain cover') || combined.includes('backpack rain cover')) {
+    return IMAGES.backpackRainCover;
+  }
+  if (combined.includes('dry bag')) {
+    return IMAGES.dryBag;
+  }
+  if (combined.includes('silica') || combined.includes('desiccant') || combined.includes('moisture absorber')) {
+    return IMAGES.silicaGel;
+  }
+  if (combined.includes('bottle') || combined.includes('silicone') || combined.includes('toiletries')) {
+    return IMAGES.bottles;
+  }
+  if (combined.includes('rain jacket')) {
+    return IMAGES.rainJacket;
   }
 
-  return 'https://images.unsplash.com/photo-1501555088652-021faa106b9b?auto=format&fit=crop&w=600&q=80';
+  return IMAGES.genericGear;
 }
 
 export const ShopScreen: React.FC<ShopScreenProps> = () => {
@@ -225,6 +282,29 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
   const [isAnalyzingSmartShop, setIsAnalyzingSmartShop] = useState<boolean>(false);
   const [smartShopError, setSmartShopError] = useState<string | null>(null);
   const [aiShopCache, setAiShopCache] = useState<Record<string, SmartShopData>>({});
+  const [cacheStats, setCacheStats] = useState<{ imageCount: number; shopCount: number; totalBytes: number } | null>(null);
+
+  // Hydrate AI shop cache from IndexedDB and precache initial product images on mount
+  useEffect(() => {
+    // 1. Hydrate cached AI smart shop recommendations from IndexedDB
+    loadAllAiShopDataFromIDB().then((cached) => {
+      if (cached && Object.keys(cached).length > 0) {
+        setAiShopCache((prev) => ({ ...prev, ...cached }));
+      }
+    });
+
+    // 2. Pre-cache all preset catalog images in IndexedDB in the background
+    const initialUrls = [
+      ...Object.values(IMAGES),
+      ...Object.values(PRESET_SMART_SHOP).flatMap((preset) =>
+        preset.recommendations.map((r) => resolveGearImage(r))
+      ),
+    ];
+    precacheImageUrls(Array.from(new Set(initialUrls)));
+
+    // 3. Load initial storage statistics
+    getGearCacheStats().then(setCacheStats);
+  }, []);
 
   // Sync theme when activeTrip changes
   useEffect(() => {
@@ -344,7 +424,12 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
           recommendations: data.recommendations,
         };
         setAiShopCache((prev) => ({ ...prev, [cacheKey]: compiled }));
-        setToastMsg(`✓ Gemini AI personalized gear for ${dest}!`);
+        // Save to persistent IndexedDB cache
+        saveAiShopDataToIDB(cacheKey, compiled);
+        // Pre-cache all recommendation product images into IndexedDB for instant display
+        precacheImageUrls(compiled.recommendations.map((r) => resolveGearImage(r)));
+        getGearCacheStats().then(setCacheStats);
+        setToastMsg(`✓ Gemini AI personalized gear for ${dest} (Saved to IndexedDB)!`);
         setTimeout(() => setToastMsg(null), 3000);
       } else {
         throw new Error('No recommendations returned');
@@ -417,10 +502,26 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
     setTimeout(() => setToastMsg(null), 2500);
   };
 
-  // AI-powered dynamic search across stores
+  // AI-powered dynamic search across stores with IndexedDB caching
   const handleRunAISearch = async (queryText?: string) => {
     const q = (queryText || searchQuery).trim();
     if (!q) return;
+
+    // Check IndexedDB cache first for instant 0ms result without redundant network call
+    try {
+      const cached = await loadAiSearchFromIDB(q);
+      if (cached && cached.products && cached.products.length > 0) {
+        setAiCustomProducts(cached.products);
+        setAiSummary(cached.summary);
+        precacheImageUrls(cached.products.map((p: any) => p.imageUrl));
+        getGearCacheStats().then(setCacheStats);
+        setToastMsg(`⚡ Instant IndexedDB Cache: Loaded ${cached.products.length} items for "${q}"!`);
+        setTimeout(() => setToastMsg(null), 2500);
+        return;
+      }
+    } catch {
+      // Proceed to network fetch
+    }
 
     try {
       setIsAiSearching(true);
@@ -457,7 +558,11 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
 
         setAiCustomProducts(mappedProducts);
         setAiSummary(data.aiSummary || null);
-        setToastMsg(`✓ Gemini AI curated ${mappedProducts.length} items for "${q}"!`);
+        // Persist to IndexedDB
+        saveAiSearchToIDB(q, mappedProducts, data.aiSummary || null);
+        precacheImageUrls(mappedProducts.map((p) => p.imageUrl));
+        getGearCacheStats().then(setCacheStats);
+        setToastMsg(`✓ Gemini AI curated ${mappedProducts.length} items for "${q}" (Cached locally)!`);
       }
     } catch (e) {
       console.warn('AI shop search error:', e);
@@ -597,7 +702,7 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
         badge: 'Sub-Zero Rated',
         featureIcon: 'heat_pump',
         featureText: 'Heat-lock brushed fleece inside, antibacterial snug warmth',
-        imageUrl: IMAGES.powerbank,
+        imageUrl: IMAGES.thermals,
         category: 'winter',
         keywords: ['thermal', 'inners', 'warm', 'winter', 'fleece', 'base layer', 'snow', 'long johns'],
         link: 'https://www.amazon.in/s?k=thermal+innerwear+set',
@@ -1648,12 +1753,16 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                   </div>
 
                   {/* Product Photo Showcase */}
-                  <div className="relative w-full h-44 rounded-2xl bg-slate-100 overflow-hidden shadow-2xs group-hover:shadow-xs transition-all">
+                  <div className="relative w-full h-48 rounded-2xl bg-slate-50 border border-slate-100/90 overflow-hidden flex items-center justify-center p-3.5 group-hover:bg-slate-100/70 transition-all">
                     <img
                       src={resolveGearImage(item)}
                       alt={item.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply"
                       loading="lazy"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/products/travel-backpack.jpg';
+                      }}
                     />
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-bold shadow-xs border border-slate-200/50">
                       <span className="material-symbols-outlined text-[13px] text-amber-600">
@@ -1949,8 +2058,17 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                   className="flex flex-col bg-white rounded-2xl shadow-xs border border-slate-100 overflow-hidden transition-all hover:shadow-md"
                 >
                   {/* Product Thumbnail & Retailer Pill */}
-                  <div className="relative w-full h-44 bg-slate-100 overflow-hidden">
-                    <img src={prod.imageUrl} alt={prod.title} className="w-full h-full object-cover" />
+                  <div className="relative w-full h-48 bg-slate-50 border-b border-slate-100 overflow-hidden flex items-center justify-center p-3.5 group-hover:bg-slate-100/70 transition-all">
+                    <img
+                      src={prod.imageUrl}
+                      alt={prod.title}
+                      className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply"
+                      loading="lazy"
+                      referrerPolicy="no-referrer"
+                      onError={(e) => {
+                        (e.currentTarget as HTMLImageElement).src = '/images/products/travel-backpack.jpg';
+                      }}
+                    />
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-bold shadow-xs">
                       <span className="material-symbols-outlined text-[14px] text-amber-600">
                         storefront

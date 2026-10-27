@@ -395,10 +395,12 @@ const AppContent: React.FC = () => {
       />
 
       {/* Mobile Testing & Android APK / WebAPK Installation Modal */}
-      <MobileInstallModal
-        isOpen={isInstallModalOpen}
-        onClose={() => setIsInstallModalOpen(false)}
-      />
+      {isInstallModalOpen && (
+        <MobileInstallModal
+          isOpen={isInstallModalOpen}
+          onClose={() => setIsInstallModalOpen(false)}
+        />
+      )}
     </div>
   );
 };

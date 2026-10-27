@@ -188,8 +188,7 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                   material: 'Polyester-Spandex',
                   specPill: 'Midweight 220 GSM',
                   checkoutUrl: 'https://amazon.in',
-                  imageUrl:
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuAANvFdMoHy74JhWyWroeDwnp2YozqvBksLiwAwgPjKeN7wDpzdXm3fyzZvtBGd_uhZs_vjK5rln4szTvV_7p1AwmlngFOMjreR2500AjxTnXwcG1MmpQkTBp3xXC-6j8vqlk0hiMcqDdqzeSqQ9OP735oXdu5HWcgOhQTyXDMpl5m97zTpxknDWud97nRqcwxHH19gJGewZkw6-AKN-ydz3MwDnCJv7J0JzExmWOtYTGvehCBfUHHkKA',
+                  imageUrl: '/images/products/thermal-underwear.jpg',
                   isBestValue: true,
                 },
                 {
@@ -205,8 +204,7 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                   material: 'Microfiber Brushed',
                   specPill: 'Deep Collar Layering',
                   checkoutUrl: 'https://myntra.com',
-                  imageUrl:
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuCpbw0N-HlPqHpmrIs46S6iN78rgPC0LAd6-bHTGtMy77CPpvPDKW2m4ncDPqaTKjLldlOssqFPgnhqXO-VytyClOGDvnx0BlIXvBKHem0ORD8j8LNOH5iyXsEWm1Yv6mzkeE-tWuRTCXXAeo4rlmjRlUF8KGk15t3hT2HhQjaaXCCUweuaDtfSOufCQNIXwbf4F9JUzXmCmxi_SSj4yJS4EhbJPObCQIMLM8URlYDdqmOHr009INmvPA',
+                  imageUrl: '/images/products/thermal-underwear.jpg',
                   isTopWarmth: true,
                 },
                 {
@@ -222,8 +220,7 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                   material: 'Cotton-Poly Blend',
                   specPill: 'Lightweight Ribs',
                   checkoutUrl: 'https://flipkart.com',
-                  imageUrl:
-                    'https://lh3.googleusercontent.com/aida-public/AB6AXuBZ7tB-SHTvfxWeb7Z0IIr8ePRLt18mMuBwe-9AfjJTKh50R4rolaVeETNROt1WaoajNJtTR_O1pPyg4DYTK9CYUuYjhm-Ps0BFFevykdVbOBlaNtokwrkp5UsULj4bZU8z5gWwhk1UgeNvoCmxqPEwtCjNvsPXHAAlrz6yM-3e6v0yzhoAes4W6xiI5zXuvLm4lGvX7E8WL4VWXShLlpLpK_vONmffih1Tfgr3Xuu7D-ozhl-c1c7BrA',
+                  imageUrl: '/images/products/thermal-underwear.jpg',
                   isBudgetPick: true,
                 },
               ]
@@ -251,7 +248,12 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
                 <img
                   src={option.imageUrl}
                   alt={option.title}
-                  className="w-16 h-16 rounded-xl object-cover border border-slate-100 shrink-0"
+                  className="w-16 h-16 rounded-xl object-contain bg-slate-50 border border-slate-100 shrink-0 p-1 mix-blend-multiply"
+                  loading="lazy"
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    (e.currentTarget as HTMLImageElement).src = '/images/products/thermal-underwear.jpg';
+                  }}
                 />
                 <div className="flex-1 min-w-0">
                   <h4 className="text-xs font-bold text-slate-900 truncate">{option.title}</h4>

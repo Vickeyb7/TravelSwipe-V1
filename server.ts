@@ -2020,6 +2020,8 @@ async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
     const { createServer: createViteServer } = await import('vite');
     const vite = await createViteServer({
+      root: __dirname,
+      configFile: path.resolve(__dirname, 'vite.config.ts'),
       server: { middlewareMode: true },
       appType: 'spa',
     });

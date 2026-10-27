@@ -6,13 +6,11 @@ interface MobileInstallModalProps {
   onClose: () => void;
 }
 
-export const MobileInstallModal: React.FC<MobileInstallModalProps> = ({ isOpen, onClose }) => {
-  const { canInstall, isInstalled, isAndroid, isIOS, installApp } = usePWAInstall();
+const MobileInstallModalContent: React.FC<{ onClose: () => void }> = ({ onClose }) => {
+  const { canInstall, isInstalled, installApp } = usePWAInstall();
   const [copied, setCopied] = useState(false);
   const [activeTab, setActiveTab] = useState<'instant' | 'apk' | 'qr' | 'icons'>('instant');
   const [maskShape, setMaskShape] = useState<'squircle' | 'circle' | 'rounded' | 'none'>('squircle');
-
-  if (!isOpen) return null;
 
   // The live app URL for mobile testing
   const mobileUrl = window.location.origin;
@@ -450,4 +448,9 @@ export const MobileInstallModal: React.FC<MobileInstallModalProps> = ({ isOpen, 
       </div>
     </div>
   );
+};
+
+export const MobileInstallModal: React.FC<MobileInstallModalProps> = ({ isOpen, onClose }) => {
+  if (!isOpen) return null;
+  return <MobileInstallModalContent onClose={onClose} />;
 };
