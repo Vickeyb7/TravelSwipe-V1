@@ -1,6 +1,7 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
 import { NavTab } from './BottomNav';
+import { LiquidNavbar, NimbusIcons } from '@/components/ui/liquid-glass-navbar';
 
 interface HeaderProps {
   title?: string;
@@ -62,33 +63,26 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Desktop Navigation Links (Visible on desktop md+ viewports) */}
+        {/* Desktop Liquid Glass Navigation Pill */}
         {onSelectTab && (
-          <nav className="hidden md:flex items-center gap-1 bg-slate-100/90 p-1 rounded-2xl border border-slate-200/60 shadow-2xs">
-            {[
-              { id: 'home', label: 'Home', icon: 'explore' },
-              { id: 'my-trips', label: 'My Trips', icon: 'luggage' },
-              { id: 'shop', label: 'Gear Store', icon: 'shopping_bag' },
-              { id: 'wallet', label: 'Travel Wallet', icon: 'account_balance_wallet' },
-              { id: 'profile', label: 'Profile', icon: 'person' },
-            ].map((tab) => {
-              const isActive = currentTab === tab.id;
-              return (
-                <button
-                  key={tab.id}
-                  onClick={() => onSelectTab(tab.id as NavTab)}
-                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    isActive
-                      ? 'bg-white text-blue-700 shadow-xs'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-                  }`}
-                >
-                  <span className="material-symbols-outlined text-[16px]">{tab.icon}</span>
-                  <span>{tab.label}</span>
-                </button>
-              );
-            })}
-          </nav>
+          <div className="hidden md:flex items-center justify-center">
+            <LiquidNavbar
+              items={[
+                { label: 'Home', icon: NimbusIcons.home, fx: 'glow' },
+                { label: 'My Trips', icon: NimbusIcons.plane, fx: 'plane' },
+                { label: 'Gear Store', icon: NimbusIcons.drop, fx: 'drop' },
+                { label: 'Travel Wallet', icon: NimbusIcons.globe, fx: 'spin' },
+                { label: 'Profile', icon: NimbusIcons.user, fx: 'wave' },
+              ]}
+              active={Math.max(0, ['home', 'my-trips', 'shop', 'wallet', 'profile'].indexOf(currentTab || 'home'))}
+              onChange={(index) => {
+                const tabs: NavTab[] = ['home', 'my-trips', 'shop', 'wallet', 'profile'];
+                onSelectTab(tabs[index]);
+              }}
+              tone="light"
+              sound={false}
+            />
+          </div>
         )}
 
         {/* Right action area */}

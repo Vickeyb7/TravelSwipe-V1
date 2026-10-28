@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PackingItem, PackingStatus, Trip } from '../types';
 import { useTrips } from '../context/TripsContext';
+import { CachedGearImage } from './CachedGearImage';
 
 interface ItemDetailsModalProps {
   item: PackingItem | null;
@@ -245,16 +246,15 @@ export const ItemDetailsModal: React.FC<ItemDetailsModalProps> = ({
               </div>
 
               <div className="flex gap-3">
-                <img
-                  src={option.imageUrl}
-                  alt={option.title}
-                  className="w-16 h-16 rounded-xl object-contain bg-slate-50 border border-slate-100 shrink-0 p-1 mix-blend-multiply"
-                  loading="lazy"
-                  referrerPolicy="no-referrer"
-                  onError={(e) => {
-                    (e.currentTarget as HTMLImageElement).src = '/images/products/thermal-underwear.jpg';
-                  }}
-                />
+                <div className="w-16 h-16 rounded-xl bg-slate-50 border border-slate-100 shrink-0 p-1 flex items-center justify-center overflow-hidden">
+                  <CachedGearImage
+                    src={option.imageUrl}
+                    alt={option.title}
+                    fallbackSrc="/images/products/thermal-underwear.jpg"
+                    className="max-w-full max-h-full object-contain mix-blend-multiply"
+                    loading="lazy"
+                  />
+                </div>
                 <div className="flex-1 min-w-0">
                   <h4 className="text-xs font-bold text-slate-900 truncate">{option.title}</h4>
                   <div className="flex items-baseline gap-2 mt-0.5">

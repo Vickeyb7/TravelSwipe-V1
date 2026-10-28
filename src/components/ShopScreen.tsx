@@ -1159,6 +1159,44 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
         </div>
       )}
 
+      {/* IndexedDB Instant Offline Cache Status Bar */}
+      <div className="flex flex-wrap items-center justify-between gap-2 px-3.5 py-2 rounded-2xl bg-slate-900 text-white text-xs shadow-xs border border-white/10">
+        <div className="flex items-center gap-2">
+          <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
+            <span className="material-symbols-outlined text-[14px]">bolt</span>
+          </div>
+          <span className="font-bold text-slate-200">
+            IndexedDB Local Image Cache Active
+          </span>
+          <span className="hidden md:inline-block text-[11px] text-slate-400">
+            • Instant 0ms loading without redundant API calls
+          </span>
+        </div>
+
+        <div className="flex items-center gap-2 text-[11px]">
+          {cacheStats && (
+            <span className="font-mono text-emerald-400 bg-emerald-950/70 border border-emerald-500/30 px-2 py-0.5 rounded-lg flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+              <span>{cacheStats.imageCount} items cached ({Math.round(cacheStats.totalBytes / 1024)} KB)</span>
+            </span>
+          )}
+          <button
+            type="button"
+            onClick={async () => {
+              await clearGearCache();
+              const stats = await getGearCacheStats();
+              setCacheStats(stats);
+              setToastMsg('IndexedDB cache reset; will re-cache on demand.');
+              setTimeout(() => setToastMsg(null), 2500);
+            }}
+            className="text-[11px] text-slate-400 hover:text-white underline cursor-pointer"
+            title="Clear and reset IndexedDB cache"
+          >
+            Clear Cache
+          </button>
+        </div>
+      </div>
+
       {/* Top Navigation Tabs: Smart Shop (Gemini AI) vs Browse All Stores */}
       <div className="flex rounded-2xl bg-slate-100 p-1 border border-slate-200">
         <button
@@ -1754,15 +1792,12 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
 
                   {/* Product Photo Showcase */}
                   <div className="relative w-full h-48 rounded-2xl bg-slate-50 border border-slate-100/90 overflow-hidden flex items-center justify-center p-3.5 group-hover:bg-slate-100/70 transition-all">
-                    <img
+                    <CachedGearImage
                       src={resolveGearImage(item)}
                       alt={item.title}
                       className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply"
                       loading="lazy"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/images/products/travel-backpack.jpg';
-                      }}
+                      showCacheBadge={true}
                     />
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-bold shadow-xs border border-slate-200/50">
                       <span className="material-symbols-outlined text-[13px] text-amber-600">
@@ -2059,15 +2094,12 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
                 >
                   {/* Product Thumbnail & Retailer Pill */}
                   <div className="relative w-full h-48 bg-slate-50 border-b border-slate-100 overflow-hidden flex items-center justify-center p-3.5 group-hover:bg-slate-100/70 transition-all">
-                    <img
+                    <CachedGearImage
                       src={prod.imageUrl}
                       alt={prod.title}
                       className="max-h-full max-w-full object-contain group-hover:scale-105 transition-transform duration-300 mix-blend-multiply"
                       loading="lazy"
-                      referrerPolicy="no-referrer"
-                      onError={(e) => {
-                        (e.currentTarget as HTMLImageElement).src = '/images/products/travel-backpack.jpg';
-                      }}
+                      showCacheBadge={true}
                     />
                     <div className="absolute top-2.5 left-2.5 flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-white/95 backdrop-blur-md text-slate-800 text-[11px] font-bold shadow-xs">
                       <span className="material-symbols-outlined text-[14px] text-amber-600">

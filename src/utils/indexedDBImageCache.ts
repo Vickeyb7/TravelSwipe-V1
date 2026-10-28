@@ -39,6 +39,14 @@ const memoryBlobUrlMap = new Map<string, string>();
 let dbPromise: Promise<IDBDatabase> | null = null;
 
 /**
+ * Returns in-memory cached object URL synchronously if already loaded this session (0ms).
+ */
+export function getMemoryCachedUrl(url: string): string | null {
+  if (!url) return null;
+  return memoryBlobUrlMap.get(url) || null;
+}
+
+/**
  * Initializes and returns the IndexedDB database instance.
  * Gracefully handles private browsing / restricted iframe contexts.
  */

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { resolveAndCacheImageUrl } from '../utils/indexedDBImageCache';
+import { resolveAndCacheImageUrl, getMemoryCachedUrl } from '../utils/indexedDBImageCache';
 
 interface CachedGearImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
   src: string;
@@ -17,8 +17,9 @@ export const CachedGearImage: React.FC<CachedGearImageProps> = ({
   showCacheBadge = false,
   ...props
 }) => {
-  const [currentSrc, setCurrentSrc] = useState<string>(src);
-  const [isCached, setIsCached] = useState<boolean>(false);
+  const initialCached = getMemoryCachedUrl(src);
+  const [currentSrc, setCurrentSrc] = useState<string>(() => initialCached || src);
+  const [isCached, setIsCached] = useState<boolean>(() => !!initialCached || src?.startsWith('blob:'));
   const [hasError, setHasError] = useState<boolean>(false);
 
   useEffect(() => {
