@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { Trip } from '../types';
 import { DestinationWeatherWidget } from './DestinationWeatherWidget';
 import { DestinationForecastData } from '../services/locationWeather';
+import { PackingProgressChart } from './PackingProgressChart';
+import { ContextualWeatherAlert } from './ContextualWeatherAlert';
 
 interface TripPackingDeckScreenProps {
   trip: Trip;
@@ -183,6 +185,15 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
         </div>
       </div>
 
+      {/* AI Contextual Weather Alert & Packing Optimizer */}
+      <ContextualWeatherAlert
+        tripId={trip.id}
+        destination={trip.destination}
+        forecastData={liveForecastData}
+        items={trip.items || []}
+        onOpenChecklist={onOpenChecklist}
+      />
+
       {/* Real-Time Destination & Dates Weather Forecast Widget */}
       <DestinationWeatherWidget
         tripId={trip.id}
@@ -203,38 +214,24 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
       />
     </div>
 
-    {/* Right Column: Packing Progress & Hub Cards */}
+    {/* Right Column: D3 Packing Progress Dashboard & Hub Cards */}
     <div className="lg:col-span-5 flex flex-col gap-6">
-      {/* Packing Completion Summary Card */}
-      <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-100 flex flex-col gap-3.5">
+      {/* D3.js Packing Progress Dashboard Widget */}
+      <PackingProgressChart
+        items={trip.items || []}
+        onOpenCategoryChecklist={() => onOpenChecklist()}
+      />
+
+      {/* 2x2 Metric Stat Tiles */}
+      <div className="bg-white rounded-2xl p-4 shadow-xs border border-slate-100 flex flex-col gap-3">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-2.5 h-2.5 rounded-full bg-teal-500 animate-pulse" />
-            <h3 className="text-sm font-bold text-slate-900">Packing Progress</h3>
-          </div>
-          <span className="text-xs text-blue-600 font-extrabold px-2.5 py-0.5 rounded-full bg-blue-50 border border-blue-100">
-            {pct}% Prepared
+          <h4 className="text-xs font-bold text-slate-800">Luggage Breakdown</h4>
+          <span className="text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+            {total} Items Total
           </span>
         </div>
 
-        {/* Progress Meter */}
-        <div className="space-y-1.5">
-          <div className="flex justify-between items-baseline text-xs text-slate-500">
-            <span>
-              <strong className="text-slate-800">{readyCount}</strong> of {total} items ready
-            </span>
-            <span className="text-amber-700 font-bold">{needToBuy} remaining</span>
-          </div>
-          <div className="w-full h-2.5 rounded-full bg-slate-100 overflow-hidden">
-            <div
-              className="h-full rounded-full bg-blue-600 transition-all duration-700 ease-out"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-        </div>
-
-        {/* 2x2 Metric Stat Tiles */}
-        <div className="grid grid-cols-2 gap-2.5 pt-1">
+        <div className="grid grid-cols-2 gap-2.5">
           <div className="bg-slate-50 rounded-xl p-3 flex items-center justify-between border border-slate-100">
             <div>
               <span className="text-xl font-extrabold text-slate-900 leading-tight block">

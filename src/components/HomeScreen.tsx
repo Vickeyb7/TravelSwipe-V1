@@ -186,7 +186,7 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               className="w-full h-12 rounded-full bg-blue-600 text-white font-extrabold text-xs shadow-md hover:bg-blue-700 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <span className="material-symbols-outlined text-[18px]">add_circle</span>
-              <span>Plan a New Trip with AI</span>
+              <span>Plan a New Trip</span>
             </button>
           </section>
 

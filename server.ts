@@ -1414,7 +1414,254 @@ Return strictly JSON format:
   });
 });
 
-// 5. Popular & Trending Destinations Powered by Gemini AI based on Current Seasonal Interests
+// 5. Contextual Weather Alert & Packing List Recommendations (Powered by Gemini AI)
+app.post('/api/ai/contextual-weather-recommendations', async (req: Request, res: Response) => {
+  try {
+    const {
+      destination = 'Destination',
+      forecast,
+      currentItems = [],
+    } = req.body;
+
+    const itemsSummary = (currentItems || []).slice(0, 45).map((it: any) => ({
+      id: it.id,
+      name: it.name,
+      category: it.category || 'Gear',
+      status: it.status || 'to_buy',
+    }));
+
+    if (ai && apiKey) {
+      const prompt = `You are TripSwipe AI's Contextual Weather & Packing Recommendation Engine.
+The traveler is preparing for a trip to: ${destination}.
+Here is the destination's 7-Day Weather Forecast:
+- Minimum Expected Temp: ${forecast?.overallTripMin ?? 'variable'}°C
+- Maximum Expected Temp: ${forecast?.overallTripMax ?? 'variable'}°C
+- Dominant Conditions: ${forecast?.dominantCondition ?? forecast?.condition ?? 'Typical weather'}
+- Max Precipitation Probability: ${forecast?.maxRainChance ?? 0}%
+- Daily Forecast Highlights: ${(forecast?.daily || []).slice(0, 7).map((d: any) => `${d.dayName || d.date}: ${d.tempMin}°C to ${d.tempMax}°C, ${d.conditionText || 'clear'}, ${d.precipProb ?? 0}% rain`).join('; ')}
+
+Current Packing List (${itemsSummary.length} items):
+${itemsSummary.map((it: any) => `- [${it.id}] ${it.name} (${it.category}) [Status: ${it.status}]`).join('\n')}
+
+Analyze this 7-day forecast specifically against what is currently in their packing list:
+1. "alertTitle": Short, impactful warning or advice title (e.g. "Freezing Sub-Zero Lows Expected" or "Monsoon Showers Ahead" or "Intense UV & Heat Wave").
+2. "severity": "info" | "warning" | "alert"
+3. "forecastAnalysis": 1 to 2 clear sentences explaining what weather condition poses a challenge and why their packing list needs adjustments.
+4. "recommendationsToAdd": 2 to 4 items they DO NOT have yet that are essential/recommended for this specific forecast.
+   - category MUST be strictly one of: "Clothing & Layers", "Footwear & Boots", "Toiletries & Meds", "Electronics & Gadgets", "Adventure & Essentials", "Cosmetics & Skincare".
+5. "recommendationsToRemove": 1 to 3 items currently in their packing list that are redundant, counter-productive, or useless dead weight given this specific 7-day forecast (e.g., leaving behind heavy winter coats if 30°C tropical, or leaving behind open beach sandals if sub-zero snow). Provide exact itemId from the list.`;
+
+      const aiCall = ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              alertTitle: { type: Type.STRING },
+              severity: { type: Type.STRING },
+              forecastAnalysis: { type: Type.STRING },
+              recommendationsToAdd: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    id: { type: Type.STRING },
+                    name: { type: Type.STRING },
+                    category: { type: Type.STRING },
+                    reason: { type: Type.STRING },
+                    recommendedQty: { type: Type.STRING },
+                    priority: { type: Type.STRING },
+                  },
+                  required: ['id', 'name', 'category', 'reason', 'recommendedQty', 'priority'],
+                },
+              },
+              recommendationsToRemove: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    itemId: { type: Type.STRING },
+                    name: { type: Type.STRING },
+                    reason: { type: Type.STRING },
+                  },
+                  required: ['itemId', 'name', 'reason'],
+                },
+              },
+            },
+            required: ['alertTitle', 'severity', 'forecastAnalysis', 'recommendationsToAdd', 'recommendationsToRemove'],
+          },
+        },
+      });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('Gemini API call timed out')), 7500)
+      );
+
+      const response: any = await Promise.race([aiCall, timeoutPromise]);
+
+      if (response && response.text) {
+        const parsed = JSON.parse(response.text.trim());
+        return res.json({ success: true, aiGenerated: true, ...parsed });
+      }
+    }
+  } catch (err: any) {
+    console.warn('Gemini contextual weather packing error (using fallback):', err.message);
+  }
+
+  // Deterministic fallback based on temperature and rain thresholds
+  const minTemp = Number(req.body?.forecast?.overallTripMin ?? 8);
+  const maxTemp = Number(req.body?.forecast?.overallTripMax ?? 22);
+  const maxRain = Number(req.body?.forecast?.maxRainChance ?? 20);
+  const items: any[] = req.body?.currentItems || [];
+  const dest = req.body?.destination || 'Destination';
+
+  const hasThermal = items.some((i: any) => i.name.toLowerCase().includes('thermal') || i.name.toLowerCase().includes('down'));
+  const hasRainGear = items.some((i: any) => i.name.toLowerCase().includes('umbrella') || i.name.toLowerCase().includes('rain') || i.name.toLowerCase().includes('poncho'));
+  const hasSunscreen = items.some((i: any) => i.name.toLowerCase().includes('sunscreen') || i.name.toLowerCase().includes('spf'));
+
+  const recommendationsToAdd: any[] = [];
+  const recommendationsToRemove: any[] = [];
+  let alertTitle = 'Stable Weather Pattern Expected';
+  let severity = 'info';
+  let forecastAnalysis = `7-day temperatures in ${dest} hover comfortably between ${minTemp}°C and ${maxTemp}°C with ${maxRain}% precipitation likelihood.`;
+
+  if (minTemp <= 4) {
+    alertTitle = `Sub-Zero / Freezing Cold Detected (${minTemp}°C)`;
+    severity = 'alert';
+    forecastAnalysis = `Nighttime lows drop to ${minTemp}°C in ${dest}. Extreme cold compromises agility and drains device batteries rapidly.`;
+
+    if (!hasThermal) {
+      recommendationsToAdd.push({
+        id: 'rec-thermal-innerwear',
+        name: 'Merino Wool Thermal Innerwear (Top & Bottom)',
+        category: 'Clothing & Layers',
+        reason: `Sub-zero nighttime lows (${minTemp}°C) require thermal base layers to retain core body heat.`,
+        recommendedQty: '2 sets',
+        priority: 'essential',
+      });
+    }
+
+    recommendationsToAdd.push({
+      id: 'rec-cold-balm',
+      name: 'High-Altitude Cold Cream & Lip Barrier',
+      category: 'Cosmetics & Skincare',
+      reason: 'Dry freezing mountain winds cause acute skin chapping within 2 hours.',
+      recommendedQty: '1 tube',
+      priority: 'essential',
+    });
+
+    // Check items to remove (e.g. beach sandals, thin linen shorts)
+    const beachItem = items.find((i: any) =>
+      i.name.toLowerCase().includes('sandal') ||
+      i.name.toLowerCase().includes('flip') ||
+      i.name.toLowerCase().includes('swim') ||
+      i.name.toLowerCase().includes('shorts')
+    );
+    if (beachItem) {
+      recommendationsToRemove.push({
+        itemId: beachItem.id,
+        name: beachItem.name,
+        reason: `Freezing temperatures (${minTemp}°C to ${maxTemp}°C) make summer footwear/swimwear redundant weight.`,
+      });
+    }
+  } else if (maxRain >= 35) {
+    alertTitle = `Precipitation Alert: ${maxRain}% Rain Showers`;
+    severity = 'warning';
+    forecastAnalysis = `Active rainfall probability (${maxRain}%) during your stay in ${dest}. Unprepared luggage and electronics are at risk of water damage.`;
+
+    if (!hasRainGear) {
+      recommendationsToAdd.push({
+        id: 'rec-windproof-umbrella',
+        name: 'Reinforced Windproof Travel Umbrella',
+        category: 'Adventure & Essentials',
+        reason: `Forecast predicts ${maxRain}% precipitation likelihood during your stay.`,
+        recommendedQty: '1 unit',
+        priority: 'essential',
+      });
+      recommendationsToAdd.push({
+        id: 'rec-waterproof-backpack-cover',
+        name: 'Silicone Waterproof Backpack Rain Cover',
+        category: 'Adventure & Essentials',
+        reason: 'Shields documents, cameras, and clothes while moving between transit stops.',
+        recommendedQty: '1 unit',
+        priority: 'recommended',
+      });
+    }
+
+    // Check suede or non-waterproof items to remove
+    const suedeItem = items.find((i: any) => i.name.toLowerCase().includes('canvas') || i.name.toLowerCase().includes('suede'));
+    if (suedeItem) {
+      recommendationsToRemove.push({
+        itemId: suedeItem.id,
+        name: suedeItem.name,
+        reason: 'Suede and non-waterproof canvas absorb moisture rapidly in rain; recommend leaving behind for waterproof boots.',
+      });
+    }
+  } else if (maxTemp >= 28) {
+    alertTitle = `High Heat & UV Index Forecast (${maxTemp}°C)`;
+    severity = 'warning';
+    forecastAnalysis = `Peak daytime temperatures will reach ${maxTemp}°C with intense sunshine in ${dest}. High risk of dehydration and sunburn.`;
+
+    if (!hasSunscreen) {
+      recommendationsToAdd.push({
+        id: 'rec-spf50-sunblock',
+        name: 'Broad Spectrum SPF 50+ PA++++ Sunscreen',
+        category: 'Cosmetics & Skincare',
+        reason: `High UV index and ${maxTemp}°C heat require frequent reapplication.`,
+        recommendedQty: '1 bottle (100ml)',
+        priority: 'essential',
+      });
+    }
+
+    recommendationsToAdd.push({
+      id: 'rec-electrolyte-sachets',
+      name: 'Electrolyte Hydration Drink Mix (6 Pack)',
+      category: 'Toiletries & Meds',
+      reason: 'Prevents heat fatigue and rapid electrolyte depletion during outdoor exploration.',
+      recommendedQty: '6 sachets',
+      priority: 'recommended',
+    });
+
+    // Check heavy coats to remove
+    const heavyCoat = items.find((i: any) =>
+      i.name.toLowerCase().includes('down') ||
+      i.name.toLowerCase().includes('heavy') ||
+      i.name.toLowerCase().includes('beanie') ||
+      i.name.toLowerCase().includes('wool')
+    );
+    if (heavyCoat) {
+      recommendationsToRemove.push({
+        itemId: heavyCoat.id,
+        name: heavyCoat.name,
+        reason: `With temperatures up to ${maxTemp}°C, heavy insulated outerwear will only consume precious luggage allowance.`,
+      });
+    }
+  } else {
+    // Temperate fallback
+    recommendationsToAdd.push({
+      id: 'rec-light-windbreaker',
+      name: 'Packable Lightweight Windbreaker',
+      category: 'Clothing & Layers',
+      reason: `Ideal for evening temperature drops (${minTemp}°C) without adding bulk.`,
+      recommendedQty: '1 unit',
+      priority: 'recommended',
+    });
+  }
+
+  res.json({
+    success: true,
+    aiGenerated: false,
+    alertTitle,
+    severity,
+    forecastAnalysis,
+    recommendationsToAdd,
+    recommendationsToRemove,
+  });
+});
+
+// 6. Popular & Trending Destinations Powered by Gemini AI based on Current Seasonal Interests
 app.all('/api/ai/popular-destinations', async (req: Request, res: Response) => {
   try {
     const season = req.body?.season || req.query?.season || 'Autumn & Pre-Winter 2026';
