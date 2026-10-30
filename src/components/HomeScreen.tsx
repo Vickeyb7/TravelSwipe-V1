@@ -181,22 +181,13 @@ export const HomeScreen: React.FC<HomeScreenProps> = ({
               )}
             </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                onClick={() => onPlanTrip(searchQuery.trim() || undefined)}
-                className="flex-1 h-12 rounded-full bg-blue-600 text-white font-extrabold text-xs shadow-md hover:bg-blue-700 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[18px]">add_circle</span>
-                <span>Plan a New Trip with AI</span>
-              </button>
-              <button
-                onClick={() => onNavigateTab('shop')}
-                className="px-4 h-12 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
-              >
-                <span className="material-symbols-outlined text-[17px] text-teal-600">storefront</span>
-                <span>Gear Store</span>
-              </button>
-            </div>
+            <button
+              onClick={() => onPlanTrip(searchQuery.trim() || undefined)}
+              className="w-full h-12 rounded-full bg-blue-600 text-white font-extrabold text-xs shadow-md hover:bg-blue-700 active:scale-98 transition-all flex items-center justify-center gap-2 cursor-pointer"
+            >
+              <span className="material-symbols-outlined text-[18px]">add_circle</span>
+              <span>Plan a New Trip with AI</span>
+            </button>
           </section>
 
           {/* Featured Upcoming Trip Card (if trip exists) or First-Time Journey Card */}

@@ -185,6 +185,7 @@ export const TripPackingDeckScreen: React.FC<TripPackingDeckScreenProps> = ({
 
       {/* Real-Time Destination & Dates Weather Forecast Widget */}
       <DestinationWeatherWidget
+        tripId={trip.id}
         destination={trip.destination}
         region={trip.region}
         startDate={trip.startDate}

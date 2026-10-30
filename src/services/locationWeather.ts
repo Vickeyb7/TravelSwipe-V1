@@ -554,18 +554,33 @@ export async function fetchDestinationForecast(
           const mapped = mapWeatherCodeToCondition(code, 1);
           const formattedDate = `${d.getDate()} ${monthNamesShort[d.getMonth()]}`;
 
+          const maxT = Math.round(data.daily.temperature_2m_max?.[i] ?? currentTemp + 2);
+          const minT = Math.round(data.daily.temperature_2m_min?.[i] ?? currentTemp - 4);
+          const rain = data.daily.precipitation_probability_max?.[i] ?? 10;
+          const uv = Math.round(data.daily.uv_index_max?.[i] ?? 6);
+
+          let packingTip = 'Light versatile layers & walking sneakers';
+          if (rain >= 40) packingTip = 'Rain likely: pack waterproof shell, rain cover or compact umbrella';
+          else if (minT <= 0) packingTip = 'Sub-zero freezing lows: thermal underwear, fleece & down jacket';
+          else if (minT <= 10) packingTip = 'Chilly weather: warm evening fleece or packable jacket essential';
+          else if (maxT >= 32) packingTip = 'High tropical heat: breathable linen/cotton & UV sun protection';
+          else if (uv >= 7) packingTip = 'High UV index: pack SPF 50+ sunscreen & polarized sunglasses';
+          else if (rain >= 25) packingTip = 'Passing showers: light water-resistant windbreaker recommended';
+          else packingTip = 'Mild exploration weather: comfortable walking shoes & versatile layers';
+
           const item: DestinationDailyForecast = {
             date: dateStr,
             dayName,
             dayOfWeek: dayNamesShort[d.getDay()],
             formattedDate,
-            tempMax: Math.round(data.daily.temperature_2m_max?.[i] ?? currentTemp + 2),
-            tempMin: Math.round(data.daily.temperature_2m_min?.[i] ?? currentTemp - 4),
+            tempMax: maxT,
+            tempMin: minT,
             condition: mapped.label,
             icon: mapped.icon,
-            rainProb: data.daily.precipitation_probability_max?.[i] ?? 10,
-            uvIndex: Math.round(data.daily.uv_index_max?.[i] ?? 6),
+            rainProb: rain,
+            uvIndex: uv,
             windSpeed: Math.round(windSpeed + (i % 3)),
+            packingTip,
           };
 
           liveDailyMap[dateStr] = item;
@@ -596,6 +611,10 @@ export async function fetchDestinationForecast(
       const mapped = mapWeatherCodeToCondition(code, 1);
       const formattedDate = `${d.getDate()} ${monthNamesShort[d.getMonth()]}`;
 
+      let fallbackPackingTip = 'Comfortable casual exploration layers & walking shoes';
+      if (isCold) fallbackPackingTip = 'Sub-zero thermal innerwear & windproof down coat';
+      else if (isBeach) fallbackPackingTip = idx === 3 ? 'Pack waterproof gear for coastal showers' : 'Breathable beachwear, sandals & sunscreen';
+
       const item: DestinationDailyForecast = {
         date: dateStr,
         dayName: idx === 0 ? 'Today' : idx === 1 ? 'Tomorrow' : dayNamesShort[d.getDay()],
@@ -608,6 +627,7 @@ export async function fetchDestinationForecast(
         rainProb: isBeach && idx === 3 ? 45 : 10,
         uvIndex: isBeach ? 8 : 4,
         windSpeed: 14,
+        packingTip: fallbackPackingTip,
       };
 
       liveDailyMap[dateStr] = item;
