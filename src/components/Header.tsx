@@ -70,8 +70,8 @@ export const Header: React.FC<HeaderProps> = ({
               items={[
                 { label: 'Home', icon: NimbusIcons.home, fx: 'glow' },
                 { label: 'My Trips', icon: NimbusIcons.plane, fx: 'plane' },
-                { label: 'Gear Store', icon: NimbusIcons.drop, fx: 'drop' },
-                { label: 'Travel Wallet', icon: NimbusIcons.globe, fx: 'spin' },
+                { label: 'Gear Store', icon: NimbusIcons.bag, fx: 'pop' },
+                { label: 'Travel Wallet', icon: NimbusIcons.wallet, fx: 'spin' },
                 { label: 'Profile', icon: NimbusIcons.user, fx: 'wave' },
               ]}
               active={Math.max(0, ['home', 'my-trips', 'shop', 'wallet', 'profile'].indexOf(currentTab || 'home'))}

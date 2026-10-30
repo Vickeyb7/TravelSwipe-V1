@@ -15,8 +15,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({ currentTab, onSelectTab })
   const items: LiquidNavItem[] = [
     { label: 'Home', icon: NimbusIcons.home, fx: 'glow' },
     { label: 'Trips', icon: NimbusIcons.plane, fx: 'plane' },
-    { label: 'Shop', icon: NimbusIcons.drop, fx: 'drop' },
-    { label: 'Wallet', icon: NimbusIcons.globe, fx: 'spin' },
+    { label: 'Shop', icon: NimbusIcons.bag, fx: 'pop' },
+    { label: 'Wallet', icon: NimbusIcons.wallet, fx: 'spin' },
     { label: 'Profile', icon: NimbusIcons.user, fx: 'wave' },
   ];
 
