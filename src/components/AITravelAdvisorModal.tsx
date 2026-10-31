@@ -137,8 +137,7 @@ export const AITravelAdvisorModal: React.FC<AITravelAdvisorModalProps> = ({
       };
 
       setMessages((prev) => [...prev, aiMsg]);
-    } catch (err) {
-      console.error('Failed to communicate with AI advisor:', err);
+    } catch {
       setMessages((prev) => [
         ...prev,
         {

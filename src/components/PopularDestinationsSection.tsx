@@ -402,8 +402,8 @@ export const PopularDestinationsSection: React.FC<PopularDestinationsSectionProp
         if (data.seasonOverview) setSeasonOverview(data.seasonOverview);
         setIsAiGenerated(Boolean(data.aiGenerated));
       }
-    } catch (e) {
-      console.warn('Failed to fetch trending destinations:', e);
+    } catch {
+      // Handled with curated destinations
     } finally {
       setLoading(false);
     }

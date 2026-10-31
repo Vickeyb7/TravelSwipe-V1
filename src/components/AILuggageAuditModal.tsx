@@ -62,8 +62,8 @@ export const AILuggageAuditModal: React.FC<AILuggageAuditModalProps> = ({
 
       const data = await res.json();
       setAuditData(data);
-    } catch (err) {
-      console.error('Failed to run luggage audit:', err);
+    } catch {
+      // Handled gracefully with fallback
     } finally {
       setLoading(false);
     }

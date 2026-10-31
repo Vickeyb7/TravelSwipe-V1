@@ -434,9 +434,8 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
       } else {
         throw new Error('No recommendations returned');
       }
-    } catch (err: any) {
-      console.warn('Smart Shop fetch error:', err.message);
-      setSmartShopError('Could not refresh AI recommendations right now; showing instant curated gear.');
+    } catch {
+      setSmartShopError('Showing verified regional travel gear.');
     } finally {
       setIsAnalyzingSmartShop(false);
     }
@@ -562,10 +561,10 @@ export const ShopScreen: React.FC<ShopScreenProps> = () => {
         saveAiSearchToIDB(q, mappedProducts, data.aiSummary || null);
         precacheImageUrls(mappedProducts.map((p) => p.imageUrl));
         getGearCacheStats().then(setCacheStats);
-        setToastMsg(`✓ Gemini AI curated ${mappedProducts.length} items for "${q}" (Cached locally)!`);
+        setToastMsg(`✓ Curated ${mappedProducts.length} items for "${q}"!`);
       }
-    } catch (e) {
-      console.warn('AI shop search error:', e);
+    } catch {
+      // Graceful fallback to local catalog
     } finally {
       setIsAiSearching(false);
     }

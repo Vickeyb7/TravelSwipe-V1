@@ -14,6 +14,7 @@ import { auth, db, handleFirestoreError, OperationType } from '../firebase';
 import { UserProfile } from '../types';
 import { initialProfile } from '../utils/data';
 import { DEFAULT_HUMAN_AVATAR, getEmailVectorAvatar, generateSvgDataUriForEmail } from '../utils/avatars';
+import { sanitizeForFirestore } from '../utils/sanitize';
 
 interface AuthContextType {
   currentUser: User | null;
@@ -99,20 +100,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
               avatarUrl: initialAvatar,
               isGuest: false,
             };
-            await setDoc(userDocRef, {
-              uid: user.uid,
-              name: newProf.name,
-              email: newProf.email,
-              level: newProf.level,
-              badge: newProf.badge,
-              packingStyle: newProf.packingStyle,
-              packingTags: newProf.packingTags,
-              luggageDefault: newProf.luggageDefault,
-              defaultBudget: newProf.defaultBudget,
-              avatarUrl: newProf.avatarUrl,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            });
+            await setDoc(
+              userDocRef,
+              sanitizeForFirestore({
+                uid: user.uid,
+                name: newProf.name || 'Traveller',
+                email: newProf.email || '',
+                level: newProf.level || 1,
+                badge: newProf.badge || 'Explorer',
+                packingStyle: newProf.packingStyle || 'Balanced',
+                packingTags: newProf.packingTags || [],
+                luggageDefault: newProf.luggageDefault || '',
+                defaultBudget: newProf.defaultBudget || '',
+                avatarUrl: newProf.avatarUrl || '',
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              })
+            );
             setUserProfile(newProf);
           }
         } catch (err) {
@@ -148,20 +152,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       const guestData = loadGuestProfile();
       const userDocRef = doc(db, 'users', cred.user.uid);
-      await setDoc(userDocRef, {
-        uid: cred.user.uid,
-        name: name || email.split('@')[0] || 'Traveller',
-        email: email,
-        level: 1,
-        badge: 'Explorer',
-        packingStyle: guestData.packingStyle,
-        packingTags: guestData.packingTags,
-        luggageDefault: guestData.luggageDefault,
-        defaultBudget: guestData.defaultBudget,
-        avatarUrl: guestData.avatarUrl || '',
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
-      });
+      await setDoc(
+        userDocRef,
+        sanitizeForFirestore({
+          uid: cred.user.uid,
+          name: name || email.split('@')[0] || 'Traveller',
+          email: email,
+          level: 1,
+          badge: 'Explorer',
+          packingStyle: guestData.packingStyle || 'Balanced',
+          packingTags: guestData.packingTags || [],
+          luggageDefault: guestData.luggageDefault || '',
+          defaultBudget: guestData.defaultBudget || '',
+          avatarUrl: guestData.avatarUrl || '',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        })
+      );
     } catch (err) {
       handleFirestoreError(err, OperationType.WRITE, `users/${cred.user.uid}`);
     }
@@ -225,7 +232,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (currentUser) {
       try {
         const userDocRef = doc(db, 'users', currentUser.uid);
-        await setDoc(userDocRef, { ...updates, updatedAt: new Date().toISOString() }, { merge: true });
+        const payload = sanitizeForFirestore({
+          ...updates,
+          updatedAt: new Date().toISOString(),
+        });
+        await setDoc(userDocRef, payload, { merge: true });
       } catch (err) {
         console.warn('Failed to sync profile update to Firestore:', err);
       }

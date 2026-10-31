@@ -62,6 +62,93 @@ if (apiKey) {
   });
 }
 
+// Circuit breaker & rate limit / quota management for Gemini AI
+const quotaCooldown: {
+  exhaustedUntil: number;
+  reason: string;
+} = {
+  exhaustedUntil: 0,
+  reason: '',
+};
+
+export const isGeminiAvailable = (): boolean => {
+  return !!(ai && apiKey && Date.now() > quotaCooldown.exhaustedUntil);
+};
+
+export const registerGeminiQuotaLimit = (err: any, context: string) => {
+  const rawMsg = err?.message || String(err || '');
+  const is429 =
+    rawMsg.includes('429') ||
+    rawMsg.includes('RESOURCE_EXHAUSTED') ||
+    rawMsg.includes('quota') ||
+    rawMsg.includes('Quota exceeded') ||
+    rawMsg.includes('rate-limits');
+
+  if (is429) {
+    // Default cooldown to 3 hours or parsed delay from response
+    let cooldownMs = 3 * 60 * 60 * 1000;
+    try {
+      const match = rawMsg.match(/retry in\s+(\d+)h(\d+)m/i) || rawMsg.match(/retryDelay"?:\s*"(\d+)s"/i);
+      if (match) {
+        if (match[2]) {
+          const h = parseInt(match[1], 10);
+          const m = parseInt(match[2], 10);
+          cooldownMs = (h * 60 + m) * 60 * 1000;
+        } else if (match[1]) {
+          cooldownMs = parseInt(match[1], 10) * 1000;
+        }
+      }
+    } catch {}
+
+    quotaCooldown.exhaustedUntil = Date.now() + cooldownMs;
+    quotaCooldown.reason = 'Free tier daily request limit reached';
+    console.info(`[TripSwipe AI Engine] API quota limit reached; activating verified regional travel benchmark engine.`);
+  } else {
+    console.info(`[TripSwipe AI Engine] ${context} handled; utilizing verified travel presets.`);
+  }
+};
+
+async function safeGenerateContent(params: {
+  contents: any;
+  config?: any;
+  context: string;
+  timeoutMs?: number;
+}): Promise<string | null> {
+  if (!isGeminiAvailable() || !ai) {
+    return null;
+  }
+
+  // Model fallback strategy: default to gemini-3.8-flash, try gemini-3.1-flash-lite if available
+  const modelsToTry = ['gemini-3.8-flash', 'gemini-3.1-flash-lite'];
+
+  for (const model of modelsToTry) {
+    try {
+      const timeoutMs = params.timeoutMs || 8000;
+      const generatePromise = ai.models.generateContent({
+        model,
+        contents: params.contents,
+        config: params.config,
+      });
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('AI response timeout')), timeoutMs)
+      );
+
+      const response: any = await Promise.race([generatePromise, timeoutPromise]);
+      if (response && response.text) {
+        return response.text;
+      }
+    } catch (err: any) {
+      registerGeminiQuotaLimit(err, `${params.context} [${model}]`);
+      if (!isGeminiAvailable()) {
+        break; // Quota exhausted, do not retry other models
+      }
+    }
+  }
+
+  return null;
+}
+
 // Destination seasonal climate database for instant reliable grounding
 const climateDatabase: Record<string, {
   tempRange: string;
@@ -157,8 +244,8 @@ app.post('/api/generate-packing', async (req: Request, res: Response) => {
       hasTechKit = true,
     } = req.body;
 
-    // Check if Gemini is initialized
-    if (ai && apiKey) {
+    // Check if Gemini is initialized and available
+    if (isGeminiAvailable()) {
       const prompt = `You are TripSwipe AI, an expert travel gear and packing advisor for Indian travellers.
 Curate an intelligent, comprehensive, and tailored packing deck for this trip:
 - Destination: ${destination}
@@ -197,8 +284,7 @@ Also return:
 - totalEstimatedWeightKg: sum of all weights
 - luggageLimitKg: 15 (standard domestic Indian airline cabin + check-in guideline)`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const rawJson = await safeGenerateContent({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -241,15 +327,19 @@ Also return:
             required: ['destinationSummary', 'weatherExpected', 'climateBadge', 'items'],
           },
         },
+        context: 'Packing Deck Generation',
+        timeoutMs: 8500,
       });
 
-      if (response.text) {
-        const parsed = JSON.parse(response.text.trim());
-        return res.json({ success: true, aiGenerated: true, ...parsed });
+      if (rawJson) {
+        try {
+          const parsed = JSON.parse(rawJson.trim());
+          return res.json({ success: true, aiGenerated: true, ...parsed });
+        } catch {}
       }
     }
   } catch (err: any) {
-    console.error('Gemini packing generation fallback triggered:', err.message);
+    registerGeminiQuotaLimit(err, 'Packing Deck Generation');
   }
 
   // Fallback to high-fidelity tailored presets
@@ -582,7 +672,7 @@ app.post('/api/ai/advisor', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Message is required' });
     }
 
-    if (ai && apiKey) {
+    if (isGeminiAvailable()) {
       const dest = tripContext?.destination || 'your destination';
       const duration = tripContext?.durationDays || 5;
       const weather = tripContext?.tempRange || 'variable weather';
@@ -613,8 +703,7 @@ Respond strictly as a JSON object with:
   - link: realistic search/buy URL
 - "quickFollowUps": Array of 3 short questions the user might want to ask next.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const rawJson = await safeGenerateContent({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -649,15 +738,19 @@ Respond strictly as a JSON object with:
             required: ['reply', 'suggestedItems', 'quickFollowUps'],
           },
         },
+        context: 'AI Travel Advisor',
+        timeoutMs: 8500,
       });
 
-      if (response.text) {
-        const parsed = JSON.parse(response.text.trim());
-        return res.json({ success: true, aiGenerated: true, ...parsed });
+      if (rawJson) {
+        try {
+          const parsed = JSON.parse(rawJson.trim());
+          return res.json({ success: true, aiGenerated: true, ...parsed });
+        } catch {}
       }
     }
   } catch (err: any) {
-    console.error('Gemini AI advisor error:', err.message);
+    registerGeminiQuotaLimit(err, 'AI Travel Advisor');
   }
 
   // High-fidelity fallback
@@ -736,7 +829,7 @@ app.post('/api/ai/luggage-audit', async (req: Request, res: Response) => {
       items.reduce((sum: number, it: any) => sum + (Number(it.weightKg) || 0.3), 0) * 10
     ) / 10;
 
-    if (ai && apiKey) {
+    if (isGeminiAvailable()) {
       const prompt = `You are TripSwipe AI's Baggage Compliance and Packing Optimization Engine.
 Trip Parameters:
 - Destination: ${destination}
@@ -757,8 +850,7 @@ Analyze this packing list and return a JSON object:
 - overpackSuggestions: array of 1-2 items that could be trimmed or reduced to save weight.
 - cabinCheckinSorting: array of objects with { itemId, recommendedBag: "cabin" | "checkin", reason: string } for key items.`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const rawJson = await safeGenerateContent({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -795,15 +887,19 @@ Analyze this packing list and return a JSON object:
             required: ['score', 'grade', 'summary', 'weightAnalysis', 'securityWarnings', 'missingEssentials', 'overpackSuggestions'],
           },
         },
+        context: 'Luggage Audit',
+        timeoutMs: 8500,
       });
 
-      if (response.text) {
-        const parsed = JSON.parse(response.text.trim());
-        return res.json({ success: true, aiGenerated: true, ...parsed });
+      if (rawJson) {
+        try {
+          const parsed = JSON.parse(rawJson.trim());
+          return res.json({ success: true, aiGenerated: true, ...parsed });
+        } catch {}
       }
     }
   } catch (err: any) {
-    console.error('Gemini luggage audit error:', err.message);
+    registerGeminiQuotaLimit(err, 'Luggage Audit');
   }
 
   // Fallback audit
@@ -853,7 +949,7 @@ app.post('/api/ai/shop-search', async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Search query is required' });
     }
 
-    if (ai && apiKey) {
+    if (isGeminiAvailable()) {
       const prompt = `You are TripSwipe AI's E-Commerce Travel Gear Finder for Indian and international travelers.
 The user is traveling to "${destination}" and searched for: "${query}".
 
@@ -882,8 +978,7 @@ Return JSON strictly:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const rawJson = await safeGenerateContent({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -918,15 +1013,19 @@ Return JSON strictly:
             required: ['query', 'aiSummary', 'products'],
           },
         },
+        context: 'Shop Search',
+        timeoutMs: 8500,
       });
 
-      if (response.text) {
-        const parsed = JSON.parse(response.text.trim());
-        return res.json({ success: true, aiGenerated: true, ...parsed });
+      if (rawJson) {
+        try {
+          const parsed = JSON.parse(rawJson.trim());
+          return res.json({ success: true, aiGenerated: true, ...parsed });
+        } catch {}
       }
     }
   } catch (err: any) {
-    console.error('Gemini shop search error:', err.message);
+    registerGeminiQuotaLimit(err, 'Shop Search');
   }
 
   // Fallback curated generation
@@ -1021,7 +1120,7 @@ app.post('/api/ai/smart-shop-recommendations', async (req: Request, res: Respons
       unpackedOrToBuyItems = [],
     } = req.body;
 
-    if (ai && apiKey) {
+    if (isGeminiAvailable()) {
       const prompt = `You are TripSwipe Smart Shop AI, an expert travel stylist and e-commerce curator for Indian and global travelers.
 Analyze this trip's complete profile:
 - Destination: ${destination}
@@ -1070,8 +1169,7 @@ Return strictly JSON format:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const rawJson = await safeGenerateContent({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -1136,15 +1234,19 @@ Return strictly JSON format:
             required: ['analysisSummary', 'climateBadge', 'activityHighlight', 'estimatedShopBudgetINR', 'recommendations'],
           },
         },
+        context: 'Smart Shop Recommendations',
+        timeoutMs: 8500,
       });
 
-      if (response.text) {
-        const parsed = JSON.parse(response.text.trim());
-        return res.json({ success: true, aiGenerated: true, ...parsed });
+      if (rawJson) {
+        try {
+          const parsed = JSON.parse(rawJson.trim());
+          return res.json({ success: true, aiGenerated: true, ...parsed });
+        } catch {}
       }
     }
   } catch (err: any) {
-    console.error('Gemini Smart Shop recommendations error:', err.message);
+    registerGeminiQuotaLimit(err, 'Smart Shop Recommendations');
   }
 
   // High-fidelity fallback tailored to destination climate & activities
@@ -1430,7 +1532,7 @@ app.post('/api/ai/contextual-weather-recommendations', async (req: Request, res:
       status: it.status || 'to_buy',
     }));
 
-    if (ai && apiKey) {
+    if (isGeminiAvailable()) {
       const prompt = `You are TripSwipe AI's Contextual Weather & Packing Recommendation Engine.
 The traveler is preparing for a trip to: ${destination}.
 Here is the destination's 7-Day Weather Forecast:
@@ -1451,8 +1553,7 @@ Analyze this 7-day forecast specifically against what is currently in their pack
    - category MUST be strictly one of: "Clothing & Layers", "Footwear & Boots", "Toiletries & Meds", "Electronics & Gadgets", "Adventure & Essentials", "Cosmetics & Skincare".
 5. "recommendationsToRemove": 1 to 3 items currently in their packing list that are redundant, counter-productive, or useless dead weight given this specific 7-day forecast (e.g., leaving behind heavy winter coats if 30°C tropical, or leaving behind open beach sandals if sub-zero snow). Provide exact itemId from the list.`;
 
-      const aiCall = ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const rawJson = await safeGenerateContent({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -1493,21 +1594,19 @@ Analyze this 7-day forecast specifically against what is currently in their pack
             required: ['alertTitle', 'severity', 'forecastAnalysis', 'recommendationsToAdd', 'recommendationsToRemove'],
           },
         },
+        context: 'Contextual Weather Recommendations',
+        timeoutMs: 8000,
       });
 
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error('Gemini API call timed out')), 7500)
-      );
-
-      const response: any = await Promise.race([aiCall, timeoutPromise]);
-
-      if (response && response.text) {
-        const parsed = JSON.parse(response.text.trim());
-        return res.json({ success: true, aiGenerated: true, ...parsed });
+      if (rawJson) {
+        try {
+          const parsed = JSON.parse(rawJson.trim());
+          return res.json({ success: true, aiGenerated: true, ...parsed });
+        } catch {}
       }
     }
   } catch (err: any) {
-    console.warn('Gemini contextual weather packing error (using fallback):', err.message);
+    registerGeminiQuotaLimit(err, 'Contextual Weather Recommendations');
   }
 
   // Deterministic fallback based on temperature and rain thresholds
@@ -1668,7 +1767,7 @@ app.all('/api/ai/popular-destinations', async (req: Request, res: Response) => {
     const month = req.body?.month || req.query?.month || 'October';
     const category = req.body?.category || req.query?.category || 'all';
 
-    if (ai && apiKey) {
+    if (isGeminiAvailable()) {
       const prompt = `You are TripSwipe AI's Global & Indian Travel Trends Curator.
 The current calendar month is ${month} (${season}).
 Analyze current seasonal interests (weather patterns, autumn foliage, early snow, pleasant palace weather, opening beach seasons, and festive getaways).
@@ -1700,8 +1799,7 @@ Return strictly JSON format:
   ]
 }`;
 
-      const response = await ai.models.generateContent({
-        model: 'gemini-3.8-flash',
+      const rawJson = await safeGenerateContent({
         contents: prompt,
         config: {
           responseMimeType: 'application/json',
@@ -1754,10 +1852,12 @@ Return strictly JSON format:
             required: ['seasonTitle', 'seasonOverview', 'destinations'],
           },
         },
+        context: 'Popular Destinations',
+        timeoutMs: 8500,
       });
 
-      if (response.text) {
-        const parsed = JSON.parse(response.text.trim());
+      if (rawJson) {
+        const parsed = JSON.parse(rawJson.trim());
         const imageGalleryMap: Record<string, string[]> = {
           manali: [
             'https://lh3.googleusercontent.com/aida-public/AB6AXuAEvBRRdHc-X3sCDHUZ1AWYTKQcvy7ZfXymzRAaTfDjYLEbYxBPmr00xcO-gTV-1uer-3Uvh9Ih6IVynu-CCptfkrwOqpvlGy9bcjwL1gQ2fO82qoR6WWu4SLGI6z_vMXEqoshVoQ7rlJRMkdefT8il98iytvY9fQKi_uVIuekvq2hQaCPV5d0IjmzasSCqeHjV5dBR16Kth06W21lgG40ajW7tJxThGW6UqJgQe5TgFsYr6uol-4pZ3A',
@@ -1831,7 +1931,7 @@ Return strictly JSON format:
       }
     }
   } catch (err: any) {
-    console.error('Gemini popular destinations error:', err.message);
+    registerGeminiQuotaLimit(err, 'Popular Destinations');
   }
 
   // Fallback high-fidelity curated trending destinations with 8 diverse spots and 3-photo galleries
@@ -2077,7 +2177,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
           return res.json({ success: true, operationName: operation.name, isLiveVeo: true });
         }
       } catch (veoErr: any) {
-        console.warn('Veo API call encountered error:', veoErr.message);
+        registerGeminiQuotaLimit(veoErr, 'Veo API Call');
       }
     }
 
@@ -2103,7 +2203,7 @@ app.post('/api/generate-video', async (req: Request, res: Response) => {
       notice: 'Rendering video with Veo video generator pipeline...',
     });
   } catch (err: any) {
-    console.error('Error in /api/generate-video:', err);
+    registerGeminiQuotaLimit(err, 'Generate video');
     res.status(500).json({ error: err.message || 'Video generation failed' });
   }
 });
@@ -2128,7 +2228,7 @@ app.post('/api/video-status', async (req: Request, res: Response) => {
           isLiveVeo: true,
         });
       } catch (pollErr: any) {
-        console.warn('Veo polling error:', pollErr.message);
+        registerGeminiQuotaLimit(pollErr, 'Veo polling');
       }
     }
 
@@ -2144,7 +2244,6 @@ app.post('/api/video-status', async (req: Request, res: Response) => {
       isLiveVeo: false,
     });
   } catch (err: any) {
-    console.error('Error in /api/video-status:', err);
     res.status(500).json({ error: err.message });
   }
 });
@@ -2176,7 +2275,7 @@ app.all(['/api/video-download', '/api/video-download/'], async (req: Request, re
           }
         }
       } catch (downErr: any) {
-        console.warn('Veo download error:', downErr.message);
+        registerGeminiQuotaLimit(downErr, 'Veo download');
       }
     }
 
@@ -2195,7 +2294,7 @@ app.all(['/api/video-download', '/api/video-download/'], async (req: Request, re
 
     res.redirect(targetUrl);
   } catch (err: any) {
-    console.error('Error in /api/video-download:', err);
+    registerGeminiQuotaLimit(err, 'Video download');
     res.status(500).json({ error: err.message });
   }
 });

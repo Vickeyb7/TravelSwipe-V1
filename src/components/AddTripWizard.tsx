@@ -222,65 +222,69 @@ export const AddTripWizard: React.FC<AddTripWizardProps> = ({
         setTimeout(async () => {
           if (!isMounted) return;
 
-          const createdItems: PackingItem[] = (data.items || []).map((it: any) => ({
-            id: it.id || `item-${Math.random().toString(36).substring(7)}`,
-            name: it.name,
-            category: it.category || 'Clothing & Layers',
-            recommendedQty: it.recommendedQty || '1 unit',
-            weightKg: it.weightKg || 0.4,
-            reason: it.reason || `Tailored for ${destination}.`,
-            status: it.initialStatus || 'to_buy',
-            priority: it.priority || 'essential',
-            subZeroOrSpecial: it.subZeroOrSpecial || false,
-            characteristics: it.characteristics || [
-              `Specially curated for ${diffDays}-day ${destination} journey`,
-              'Modular packing design to avoid overpacking',
-            ],
-            retailerOptions: it.shoppingRecommendation
-              ? [
-                  {
-                    retailer: it.shoppingRecommendation.retailer || 'Amazon India',
-                    title: it.shoppingRecommendation.title || it.name,
-                    price: it.shoppingRecommendation.approxPriceINR || 999,
-                    originalPrice: (it.shoppingRecommendation.approxPriceINR || 999) * 1.4,
-                    discountPct: 30,
-                    rating: 4.4,
-                    reviewCount: '1.2k',
-                    deliveryTime: 'Fast Delivery',
-                    colorOrStyle: 'Standard',
-                    material: 'Weather resistant',
-                    specPill: it.shoppingRecommendation.perk || 'Top Pick',
-                    checkoutUrl: 'https://amazon.in',
-                    imageUrl: preview.image,
-                    isBestValue: true,
-                  },
-                ]
-              : undefined,
-          }));
+          const createdItems: PackingItem[] = (data.items || []).map((it: any) => {
+            const item: PackingItem = {
+              id: it.id || `item-${Math.random().toString(36).substring(7)}`,
+              name: it.name || 'Travel Item',
+              category: it.category || 'Clothing & Layers',
+              recommendedQty: it.recommendedQty || '1 unit',
+              weightKg: Number(it.weightKg) || 0.4,
+              reason: it.reason || `Tailored for ${destination}.`,
+              status: it.initialStatus || 'to_buy',
+              priority: it.priority || 'essential',
+              subZeroOrSpecial: !!it.subZeroOrSpecial,
+              characteristics: it.characteristics || [
+                `Specially curated for ${diffDays}-day ${destination} journey`,
+                'Modular packing design to avoid overpacking',
+              ],
+            };
+
+            if (it.shoppingRecommendation && typeof it.shoppingRecommendation === 'object') {
+              item.retailerOptions = [
+                {
+                  retailer: it.shoppingRecommendation.retailer || 'Amazon India',
+                  title: it.shoppingRecommendation.title || it.name || 'Travel Gear',
+                  price: Number(it.shoppingRecommendation.approxPriceINR) || 999,
+                  originalPrice: (Number(it.shoppingRecommendation.approxPriceINR) || 999) * 1.4,
+                  discountPct: 30,
+                  rating: 4.4,
+                  reviewCount: '1.2k',
+                  deliveryTime: 'Fast Delivery',
+                  colorOrStyle: 'Standard',
+                  material: 'Weather resistant',
+                  specPill: it.shoppingRecommendation.perk || 'Top Pick',
+                  checkoutUrl: 'https://amazon.in',
+                  imageUrl: preview.image || '',
+                  isBestValue: true,
+                },
+              ];
+            }
+            return item;
+          });
 
           const newTrip: Omit<Trip, 'id'> = {
-            destination: destination.split(',')[0],
-            region: destination,
+            destination: (destination || 'Destination').split(',')[0],
+            region: destination || 'Destination',
             datesText: `${startDate} – ${endDate}`,
-            startDate,
-            endDate,
-            durationNights: diffNights,
-            durationDays: diffDays,
+            startDate: startDate || '',
+            endDate: endDate || '',
+            durationNights: Number(diffNights) || 1,
+            durationDays: Number(diffDays) || 1,
             daysAway: Math.max(1, Math.round((start.getTime() - Date.now()) / (1000 * 60 * 60 * 24))),
-            party: partyType,
-            partyLabel: `${partyType.toUpperCase()} • ${travelersCount} Traveler${
+            party: partyType || 'solo',
+            partyLabel: `${(partyType || 'solo').toUpperCase()} • ${travelersCount} Traveler${
               travelersCount > 1 ? 's' : ''
             }`,
-            purposes,
-            activities,
-            style,
-            luggageType: luggage,
-            budgetTier: budget,
-            hasTechKit,
-            heroImage: preview.image,
-            scenicImage: preview.image,
-            tag: preview.tag,
-            tempRange: data.weatherExpected || preview.temp,
+            purposes: purposes || [],
+            activities: activities || [],
+            style: style || 'Smart Casual',
+            luggageType: luggage || 'Cabin Luggage (7kg)',
+            budgetTier: budget || 'Mid-range (₹₹)',
+            hasTechKit: !!hasTechKit,
+            heroImage: preview.image || '',
+            scenicImage: preview.image || '',
+            tag: preview.tag || 'Curated Journey',
+            tempRange: data.weatherExpected || preview.temp || '20°C - 28°C',
             climateTitle: data.climateBadge || 'Climate Benchmark',
             climateNote: data.destinationSummary || 'Personalized AI travel plan.',
             packingRules: ['Layered wear', 'Safe footwear', 'Activity gear'],

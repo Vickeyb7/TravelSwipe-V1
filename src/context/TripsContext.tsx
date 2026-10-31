@@ -3,6 +3,7 @@ import { collection, doc, onSnapshot, setDoc, deleteDoc } from 'firebase/firesto
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { PackingItem, PackingStatus, TravelDocument, Trip } from '../types';
 import { initialTrips } from '../utils/data';
+import { sanitizeForFirestore } from '../utils/sanitize';
 import { useAuth } from './AuthContext';
 
 interface TripsContextType {
@@ -100,7 +101,24 @@ export const TripsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       tripsColRef,
       async (snapshot) => {
         if (snapshot.empty) {
-          setTrips([]);
+          const guestTrips = loadGuestTrips();
+          if (guestTrips.length > 0) {
+            setTrips(guestTrips);
+            if (!activeTripId || !guestTrips.some((t) => t.id === activeTripId)) {
+              setActiveTripId(guestTrips[0].id);
+            }
+            const initialTrip = guestTrips[0];
+            const tripRef = doc(db, 'users', currentUser.uid, 'trips', initialTrip.id);
+            const payload = sanitizeForFirestore({
+              ...initialTrip,
+              userId: currentUser.uid,
+            });
+            setDoc(tripRef, payload).catch((e) =>
+              console.warn('Initial trip sync error:', e)
+            );
+          } else {
+            setTrips([]);
+          }
         } else {
           const userTrips: Trip[] = [];
           snapshot.forEach((docSnap) => {
@@ -269,11 +287,14 @@ export const TripsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch {}
 
     if (currentUser) {
-      setDoc(doc(db, 'users', currentUser.uid, 'trips', activated.id), {
+      const payload = sanitizeForFirestore({
         ...activated,
         userId: currentUser.uid,
         isCuratedPreview: false,
-      }).catch((e) => console.warn('Sync curated trip to Firestore error:', e));
+      });
+      setDoc(doc(db, 'users', currentUser.uid, 'trips', activated.id), payload).catch((e) =>
+        console.warn('Sync curated trip to Firestore error:', e)
+      );
     } else {
       try {
         const currentGuest = loadGuestTrips();
@@ -306,7 +327,8 @@ export const TripsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentUser) {
       try {
         const tripRef = doc(db, 'users', currentUser.uid, 'trips', recordedTrip.id);
-        await setDoc(tripRef, { ...recordedTrip, userId: currentUser.uid });
+        const payload = sanitizeForFirestore({ ...recordedTrip, userId: currentUser.uid });
+        await setDoc(tripRef, payload);
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, `users/${currentUser.uid}/trips/${recordedTrip.id}`);
       }
@@ -335,7 +357,11 @@ export const TripsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentUser) {
       try {
         const tripRef = doc(db, 'users', currentUser.uid, 'trips', tripId);
-        await setDoc(tripRef, newTrip);
+        const payload = sanitizeForFirestore({
+          ...newTrip,
+          userId: currentUser.uid,
+        });
+        await setDoc(tripRef, payload);
       } catch (err) {
         handleFirestoreError(err, OperationType.CREATE, `users/${currentUser.uid}/trips/${tripId}`);
         throw err;
@@ -370,7 +396,8 @@ export const TripsProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (currentUser) {
       try {
         const tripRef = doc(db, 'users', currentUser.uid, 'trips', tripId);
-        await setDoc(tripRef, updates, { merge: true });
+        const payload = sanitizeForFirestore(updates);
+        await setDoc(tripRef, payload, { merge: true });
       } catch (err) {
         handleFirestoreError(err, OperationType.UPDATE, `users/${currentUser.uid}/trips/${tripId}`);
       }

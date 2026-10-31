@@ -100,8 +100,8 @@ export const ContextualWeatherAlert: React.FC<ContextualWeatherAlertProps> = ({
         setRecommendationsToRemove(data.recommendationsToRemove || []);
         setIsAiGenerated(!!data.aiGenerated);
       }
-    } catch (e: any) {
-      console.warn('Contextual weather alert fetch error:', e.message);
+    } catch {
+      // Gracefully fall back to local climate benchmarks
     } finally {
       setLoading(false);
     }
